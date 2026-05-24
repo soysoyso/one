@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yido.road.sos.repository.main.NotificationRecipientMapper">
+    <select id="selectNotificationRecipientList" resultType="NotificationRecipient">
+        SELECT
+            nr.recipient_id,
+            nr.notification_type,
+            cc.cd_code_nm AS notification_type_nm,
+            nr.recipient_nm,
+            nr.phone_no,
+            nr.user_id,
+            nr.site_cd,
+            si.site_name,
+            nr.use_yn,
+            nr.sort_ord,
+            nr.remark,
+            nr.reg_id,
+            DATE_FORMAT(nr.reg_dt, '%Y-%m-%d %H:%i') AS reg_dt,
+            nr.upd_id,
+            DATE_FORMAT(nr.upd_dt, '%Y-%m-%d %H:%i') AS upd_dt
+        FROM notification_recipient nr
+            LEFT JOIN cd_common cc
+                ON cc.cd_div = 'NOTI_TYPE'
+                AND cc.cd_code = nr.notification_type
+                AND cc.use_yn = 'Y'
+            LEFT JOIN site_info si
+                ON si.site_cd = nr.site_cd
+                AND si.del_yn = 'N'
+        WHERE 1 = 1
+        <include refid="NotificationRecipientConditions"/>
+        ORDER BY nr.sort_ord ASC, nr.recipient_id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectNotificationRecipientCount" resultType="int">
+        SELECT COUNT(*)
+        FROM notification_recipient nr
+            LEFT JOIN site_info si
+                ON si.site_cd = nr.site_cd
+                AND si.del_yn = 'N'
+        WHERE 1 = 1
+        <include refid="NotificationRecipientConditions"/>
+    </select>
+
+    <sql id="NotificationRecipientConditions">
+        <if test="keyword != null and keyword != ''">
+            AND (
+                nr.recipient_nm LIKE CONCAT('%', #{keyword}, '%')
+                OR nr.phone_no LIKE CONCAT('%', #{keyword}, '%')
+                OR nr.user_id LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        <if test="notificationType != null and notificationType != ''">
+            AND nr.notification_type = #{notificationType}
+        </if>
+        <if test="siteCd != null and siteCd != ''">
+            AND nr.site_cd = #{siteCd}
+        </if>
+        <if test="useYn != null and useYn != ''">
+            AND nr.use_yn = #{useYn}
+        </if>
+    </sql>
+
+    <select id="selectNotificationRecipient" parameterType="long" resultType="NotificationRecipient">
+        SELECT
+            recipient_id,
+            notification_type,
+            recipient_nm,
+            phone_no,
+            user_id,
+            site_cd,
+            use_yn,
+            sort_ord,
+            remark,
+            reg_id,
+            DATE_FORMAT(reg_dt, '%Y-%m-%d %H:%i') AS reg_dt,
+            upd_id,
+            DATE_FORMAT(upd_dt, '%Y-%m-%d %H:%i') AS upd_dt
+        FROM notification_recipient
+        WHERE recipient_id = #{recipientId}
+    </select>
+
+    <insert id="insertNotificationRecipient" parameterType="NotificationRecipient" useGeneratedKeys="true" keyProperty="recipientId">
+        INSERT INTO notification_recipient (
+            notification_type,
+            recipient_nm,
+            phone_no,
+            user_id,
+            site_cd,
+            use_yn,
+            sort_ord,
+            remark,
+            reg_id,
+            reg_dt
+        ) VALUES (
+            #{notificationType},
+            #{recipientNm},
+            #{phoneNo},
+            #{userId},
+            #{siteCd},
+            #{useYn},
+            #{sortOrd},
+            #{remark},
+            #{regId},
+            NOW()
+        )
+    </insert>
+
+    <update id="updateNotificationRecipient" parameterType="NotificationRecipient">
+        UPDATE notification_recipient
+        SET
+            notification_type = #{notificationType},
+            recipient_nm = #{recipientNm},
+            phone_no = #{phoneNo},
+            user_id = #{userId},
+            site_cd = #{siteCd},
+            use_yn = #{useYn},
+            sort_ord = #{sortOrd},
+            remark = #{remark},
+            upd_id = #{updId},
+            upd_dt = NOW()
+        WHERE recipient_id = #{recipientId}
+    </update>
+
+    <update id="deleteNotificationRecipient" parameterType="NotificationRecipient">
+        UPDATE notification_recipient
+        SET
+            use_yn = 'N',
+            upd_id = #{updId},
+            upd_dt = NOW()
+        WHERE recipient_id = #{recipientId}
+    </update>
+</mapper>

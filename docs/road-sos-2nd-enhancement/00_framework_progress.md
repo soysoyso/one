@@ -1,5 +1,11 @@
 # road-sos 2차 고도화 진행 현황
 
+## 2026-05-24 진행 업데이트
+- 기준 소스를 `soysoyso/one` 저장소 `main` 브랜치에 업로드했다.
+- `feature/notification-recipient-settings` 브랜치에서 알림톡 수신자 설정 기능을 구현했다.
+- 추가 범위: `notification_recipient` 로컬 DB 테이블, `NOTI_TYPE` 공통코드, 관리자 화면 `/admin/notification/recipients`, 목록/상세/저장/삭제 API.
+- 검증: `docker compose build road-sos` 성공, 로컬 DB 마이그레이션 적용 성공, 관리자 화면 HTTP 200 확인, 수신자 저장/조회 API 동작 확인.
+
 ## 기준
 
 - 기준 프레임워크: `C:\Users\YIDO\Desktop\YIDO250728\codex\ai-service-framework`

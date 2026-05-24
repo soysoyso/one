@@ -2,6 +2,7 @@ package com.yido.road.sos.admin;
 
 import com.yido.road.sos.model.AdminUser;
 import com.yido.road.sos.model.CdCommon;
+import com.yido.road.sos.model.NotificationRecipient;
 import com.yido.road.sos.model.SiteInfo;
 import com.yido.road.sos.security.UserCustom;
 import com.yido.road.sos.service.*;
@@ -33,6 +34,7 @@ public class AdminController {
     private final CommonService commonService;
     private final IncidentService incidentService;
     private final AdminUserService adminUserService;
+    private final NotificationRecipientService notificationRecipientService;
 
     @GetMapping({"", "/"})
     public String root() {
@@ -144,6 +146,57 @@ public class AdminController {
         model.addAttribute("deptList", commonService.codes("DEPT"));
 
         return "admin/userSetting";
+    }
+
+    /* 알림톡 수신자 설정 페이지 */
+    @PreAuthorize("hasAnyAuthority('ATH100')")
+    @GetMapping("/notification/recipients")
+    public String notificationRecipients(Model model, @AuthenticationPrincipal UserCustom loginUser) {
+        model.addAttribute("notificationTypeList", commonService.codes("NOTI_TYPE"));
+        model.addAttribute("siteList", adminUserService.getAvailableSiteList(loginUser));
+        return "admin/notificationRecipients";
+    }
+
+    /* 알림톡 수신자 목록 조회 */
+    @PreAuthorize("hasAnyAuthority('ATH100')")
+    @GetMapping("/notification/recipients/data")
+    @ResponseBody
+    public Map<String, Object> getNotificationRecipientData(@RequestParam Map<String, Object> params) {
+        return notificationRecipientService.getRecipientListData(params);
+    }
+
+    /* 알림톡 수신자 상세 조회 */
+    @PreAuthorize("hasAnyAuthority('ATH100')")
+    @GetMapping("/notification/recipients/{recipientId}")
+    @ResponseBody
+    public ResultVO getNotificationRecipient(@PathVariable("recipientId") Long recipientId) {
+        ResultVO result = new ResultVO();
+        NotificationRecipient recipient = notificationRecipientService.getRecipient(recipientId);
+        if (recipient == null) {
+            result.setCode("9999");
+            result.setMessage("수신자 정보를 찾을 수 없습니다.");
+            return result;
+        }
+        result.setData(recipient);
+        return result;
+    }
+
+    /* 알림톡 수신자 저장 */
+    @PreAuthorize("hasAnyAuthority('ATH100')")
+    @PostMapping("/notification/recipients/save")
+    @ResponseBody
+    public ResultVO saveNotificationRecipient(@RequestParam Map<String, Object> params,
+                                              @AuthenticationPrincipal UserCustom loginUser) {
+        return notificationRecipientService.saveRecipient(params, loginUser);
+    }
+
+    /* 알림톡 수신자 삭제 */
+    @PreAuthorize("hasAnyAuthority('ATH100')")
+    @PostMapping("/notification/recipients/delete")
+    @ResponseBody
+    public ResultVO deleteNotificationRecipient(@RequestParam("recipientId") Long recipientId,
+                                                @AuthenticationPrincipal UserCustom loginUser) {
+        return notificationRecipientService.deleteRecipient(recipientId, loginUser);
     }
 
     /**
