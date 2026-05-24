@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yido.road.sos.repository.main.DailyChecklistMapper">
+    <select id="selectDailyChecklistList" resultType="DailyChecklist">
+        SELECT
+            dc.checklist_id,
+            dc.checklist_name,
+            dc.site_cd,
+            si.site_name,
+            dc.common_yn,
+            dc.use_yn,
+            dc.sort_ord,
+            dc.reg_id,
+            DATE_FORMAT(dc.reg_dt, '%Y-%m-%d %H:%i') AS reg_dt,
+            dc.upd_id,
+            DATE_FORMAT(dc.upd_dt, '%Y-%m-%d %H:%i') AS upd_dt,
+            COUNT(dci.item_id) AS item_count
+        FROM daily_checklist dc
+            LEFT JOIN site_info si
+                ON si.site_cd = dc.site_cd
+                AND si.del_yn = 'N'
+            LEFT JOIN daily_checklist_item dci
+                ON dci.checklist_id = dc.checklist_id
+                AND dci.use_yn = 'Y'
+        WHERE 1 = 1
+        <include refid="DailyChecklistConditions"/>
+        GROUP BY
+            dc.checklist_id,
+            dc.checklist_name,
+            dc.site_cd,
+            si.site_name,
+            dc.common_yn,
+            dc.use_yn,
+            dc.sort_ord,
+            dc.reg_id,
+            dc.reg_dt,
+            dc.upd_id,
+            dc.upd_dt
+        ORDER BY dc.sort_ord ASC, dc.checklist_id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectDailyChecklistCount" resultType="int">
+        SELECT COUNT(*)
+        FROM daily_checklist dc
+        WHERE 1 = 1
+        <include refid="DailyChecklistConditions"/>
+    </select>
+
+    <sql id="DailyChecklistConditions">
+        <if test="keyword != null and keyword != ''">
+            AND dc.checklist_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        <if test="siteCd != null and siteCd != ''">
+            AND dc.site_cd = #{siteCd}
+        </if>
+        <if test="useYn != null and useYn != ''">
+            AND dc.use_yn = #{useYn}
+        </if>
+    </sql>
+
+    <select id="selectDailyChecklist" resultType="DailyChecklist">
+        SELECT
+            dc.checklist_id,
+            dc.checklist_name,
+            dc.site_cd,
+            si.site_name,
+            dc.common_yn,
+            dc.use_yn,
+            dc.sort_ord,
+            dc.reg_id,
+            DATE_FORMAT(dc.reg_dt, '%Y-%m-%d %H:%i') AS reg_dt,
+            dc.upd_id,
+            DATE_FORMAT(dc.upd_dt, '%Y-%m-%d %H:%i') AS upd_dt
+        FROM daily_checklist dc
+            LEFT JOIN site_info si
+                ON si.site_cd = dc.site_cd
+                AND si.del_yn = 'N'
+        WHERE dc.checklist_id = #{checklistId}
+    </select>
+
+    <select id="selectDailyChecklistItemList" resultType="DailyChecklistItem">
+        SELECT
+            dci.item_id,
+            dci.checklist_id,
+            dci.item_name,
+            dci.input_type,
+            cc.cd_code_nm AS input_type_nm,
+            dci.required_yn,
+            dci.use_yn,
+            dci.sort_ord
+        FROM daily_checklist_item dci
+            LEFT JOIN cd_common cc
+                ON cc.cd_div = 'CHECK_INPUT_TYPE'
+                AND cc.cd_code = dci.input_type
+                AND cc.use_yn = 'Y'
+        WHERE dci.checklist_id = #{checklistId}
+        ORDER BY dci.sort_ord ASC, dci.item_id ASC
+    </select>
+
+    <insert id="insertDailyChecklist" parameterType="DailyChecklist" useGeneratedKeys="true" keyProperty="checklistId">
+        INSERT INTO daily_checklist (
+            checklist_name,
+            site_cd,
+            common_yn,
+            use_yn,
+            sort_ord,
+            reg_id,
+            reg_dt
+        ) VALUES (
+            #{checklistName},
+            #{siteCd},
+            #{commonYn},
+            #{useYn},
+            #{sortOrd},
+            #{regId},
+            NOW()
+        )
+    </insert>
+
+    <update id="updateDailyChecklist" parameterType="DailyChecklist">
+        UPDATE daily_checklist
+        SET
+            checklist_name = #{checklistName},
+            site_cd = #{siteCd},
+            common_yn = #{commonYn},
+            use_yn = #{useYn},
+            sort_ord = #{sortOrd},
+            upd_id = #{updId},
+            upd_dt = NOW()
+        WHERE checklist_id = #{checklistId}
+    </update>
+
+    <update id="deleteDailyChecklist" parameterType="DailyChecklist">
+        UPDATE daily_checklist
+        SET
+            use_yn = 'N',
+            upd_id = #{updId},
+            upd_dt = NOW()
+        WHERE checklist_id = #{checklistId}
+    </update>
+
+    <delete id="deleteDailyChecklistItems">
+        DELETE FROM daily_checklist_item
+        WHERE checklist_id = #{checklistId}
+    </delete>
+
+    <insert id="insertDailyChecklistItem" parameterType="DailyChecklistItem" useGeneratedKeys="true" keyProperty="itemId">
+        INSERT INTO daily_checklist_item (
+            checklist_id,
+            item_name,
+            input_type,
+            required_yn,
+            use_yn,
+            sort_ord
+        ) VALUES (
+            #{checklistId},
+            #{itemName},
+            #{inputType},
+            #{requiredYn},
+            #{useYn},
+            #{sortOrd}
+        )
+    </insert>
+</mapper>

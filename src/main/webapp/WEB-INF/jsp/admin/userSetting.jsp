@@ -20,6 +20,9 @@
                 <a href="/admin/notification/recipients" class="btn btn-secondary" style="margin-left:5px">
                     알림톡 수신자
                 </a>
+                <a href="/admin/daily-checklists/setting" class="btn btn-secondary" style="margin-left:5px">
+                    일상점검 체크리스트
+                </a>
             </div>
         </div>
 
