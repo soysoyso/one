@@ -12,6 +12,11 @@
 - 저장 API에서 잘못된 요청이 `500`으로 터지지 않도록 숫자 변환과 항목 누락 방어를 추가했다.
 - 검증: 빌드 성공, 마이그레이션 적용 성공, 화면 HTTP 200 확인, 잘못된 저장 요청 `code=9999` 확인, 정상 저장/조회 확인.
 
+## 2026-05-24 사용자 일상점검 작성 업데이트
+- `feature/daily-check-user-form` 브랜치에서 현장 사용자 일상점검 작성 화면을 구현했다.
+- 추가 범위: `daily_check_log`, `daily_check_log_item`, 로컬 테스트 계정 `field / field123`, 화면 `/manage/daily-checks/form`, 체크리스트 상세/저장 API.
+- 검증: 사용자 화면 HTTP 200, 필수 항목 누락 방어, 정상 저장 및 DB 저장 확인, 테스트 데이터 정리 완료.
+
 ## 기준
 
 - 기준 프레임워크: `C:\Users\YIDO\Desktop\YIDO250728\codex\ai-service-framework`

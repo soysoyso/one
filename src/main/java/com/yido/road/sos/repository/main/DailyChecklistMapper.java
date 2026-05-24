@@ -20,6 +20,8 @@ public interface DailyChecklistMapper {
 
     List<DailyChecklistItem> selectDailyChecklistItemList(@Param("checklistId") Long checklistId);
 
+    List<DailyChecklist> selectUsableDailyChecklists(@Param("siteCd") String siteCd);
+
     void insertDailyChecklist(DailyChecklist checklist);
 
     void updateDailyChecklist(DailyChecklist checklist);

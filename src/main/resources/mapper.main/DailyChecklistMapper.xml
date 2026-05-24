@@ -99,6 +99,29 @@
         ORDER BY dci.sort_ord ASC, dci.item_id ASC
     </select>
 
+    <select id="selectUsableDailyChecklists" resultType="DailyChecklist">
+        SELECT
+            dc.checklist_id,
+            dc.checklist_name,
+            dc.site_cd,
+            si.site_name,
+            dc.common_yn,
+            dc.use_yn,
+            dc.sort_ord
+        FROM daily_checklist dc
+            LEFT JOIN site_info si
+                ON si.site_cd = dc.site_cd
+                AND si.del_yn = 'N'
+        WHERE dc.use_yn = 'Y'
+          AND (
+              dc.common_yn = 'Y'
+              OR dc.site_cd = #{siteCd}
+              OR dc.site_cd IS NULL
+              OR dc.site_cd = ''
+          )
+        ORDER BY dc.sort_ord ASC, dc.checklist_id DESC
+    </select>
+
     <insert id="insertDailyChecklist" parameterType="DailyChecklist" useGeneratedKeys="true" keyProperty="checklistId">
         INSERT INTO daily_checklist (
             checklist_name,

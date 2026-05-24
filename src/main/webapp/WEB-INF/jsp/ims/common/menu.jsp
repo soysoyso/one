@@ -30,6 +30,9 @@
         <div class="card mb-2" onclick="location.href='/pothole/list'">
             접수내역 확인하기
         </div>
+        <div class="card mb-2" onclick="location.href='/manage/daily-checks/form'">
+            일상점검 작성
+        </div>
         <div class="card mb-2" onclick="location.href='/ims/auth/mypage'">
             마이페이지
         </div>

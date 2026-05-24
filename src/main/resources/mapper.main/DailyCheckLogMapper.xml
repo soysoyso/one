@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yido.road.sos.repository.main.DailyCheckLogMapper">
+    <select id="selectNextDailyCheckNo" parameterType="string" resultType="string">
+        SELECT CONCAT('DC', #{ymd}, LPAD(IFNULL(MAX(CAST(SUBSTRING(check_no, 11) AS UNSIGNED)), 0) + 1, 4, '0'))
+        FROM daily_check_log
+        WHERE check_no LIKE CONCAT('DC', #{ymd}, '%')
+    </select>
+
+    <insert id="insertDailyCheckLog" parameterType="DailyCheckLog" useGeneratedKeys="true" keyProperty="checkId">
+        INSERT INTO daily_check_log (
+            check_no,
+            check_date,
+            checklist_id,
+            site_cd,
+            writer_id,
+            status_cd,
+            weather_cd,
+            remark,
+            reg_dt
+        ) VALUES (
+            #{checkNo},
+            #{checkDate},
+            #{checklistId},
+            #{siteCd},
+            #{writerId},
+            #{statusCd},
+            #{weatherCd},
+            #{remark},
+            NOW()
+        )
+    </insert>
+
+    <insert id="insertDailyCheckLogItem" parameterType="DailyCheckLogItem" useGeneratedKeys="true" keyProperty="logItemId">
+        INSERT INTO daily_check_log_item (
+            check_id,
+            item_id,
+            item_name,
+            input_type,
+            required_yn,
+            check_value,
+            sort_ord
+        ) VALUES (
+            #{checkId},
+            #{itemId},
+            #{itemName},
+            #{inputType},
+            #{requiredYn},
+            #{checkValue},
+            #{sortOrd}
+        )
+    </insert>
+</mapper>
