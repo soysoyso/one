@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yido.road.sos.repository.yido.SmsSendMapper">
+		
+	<select id="sendSms" statementType="CALLABLE" parameterType="hashmap">
+		/* SmsSendMapper.sendSms - SMS 전송 */
+		CALL SP_SOS_SMS_SEND (#{msg}, #{title}, #{cellPhone},#{tplCode})
+	</select>
+</mapper>

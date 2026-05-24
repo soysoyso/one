@@ -1,0 +1,260 @@
+@font-face {
+  font-family: 'NotoSansKR';
+  src: url('/css/NotoSansKR-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'NotoSansKR';
+  src: url('/css/NotoSansKR-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+body {
+  font-family: 'NotoSansKR', Arial, sans-serif;
+  text-align: center;
+  font-size: 16px;
+}
+p {margin-bottom: 0; font-size: 15px;}
+.fs-2 {font-size: 13px !important;}
+.fs-1 {font-size: 11px !important;}
+.btn {
+  width: 100%;
+  padding: 10px 15px;
+  border-radius: 10px;
+}
+.btn.bg-danger, .btn.bg-danger:active,
+.btn.bg-primary, .btn.bg-primary:active  {
+  color: #fff;
+}
+.btn.bg-primary:active {border-color: #0d6efd;}
+.btn.bg-secondary-subtle:active {border-color: #e2e3e5;}
+.btnCall-msg {text-align: center; font-size: 13px; margin-bottom: 0;}
+#btnOnline {color: #dc3545; text-decoration: underline; margin-top: 0;}
+#btnOnline:active {
+    border-color: #f9fafb;
+}
+.btnOnline-box.active {
+    border: 1px dotted #bbb;
+    border-radius: 15px;
+    margin-top: 10px;
+    padding: 20px;
+    background: #f9fafb;
+}
+.btnOnline-box.active #btnOnline {
+    font-weight: bold;
+    text-decoration: none;
+    padding-top: 0;
+}
+#onlineForm {text-align: left;}
+#onlineForm p {margin-bottom: 5px;}
+#onlineForm span {font-size: 12px;}
+#onlineForm .btn {width: 30%;}
+.form-select:focus,
+.form-control:focus {
+  box-shadow: none;
+  border-color: #dee2e6;
+}
+.header {
+  background: #00263e;
+  color: #fff;
+  padding: 15px;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  z-index: 10000;
+}
+.header h5 {margin-bottom: 0px;}
+/* user */
+.user .container {
+  padding-top: 55px;
+  padding-bottom: 180px;
+}
+.box {
+  background: #f9fafb;
+  padding: 20px;
+  border-radius: 10px;
+}
+.location {
+  background: #dbeafe;
+  color: #00263e;
+  margin: 15px 0 5px;
+  padding: 10px 0;
+  font-weight: bold;
+}
+.dash-box {
+  width: 100%;
+  background: #f9fafb;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px dashed #bbb;
+}
+.photo-box label {
+    width: 100%;
+    background: #ffeff0;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px dotted #dc3545;
+}
+.img-ex {
+  border-radius: 10px;
+  margin-top: 10px;
+}
+.process {position: relative; margin-bottom: 15px;}
+.process p {font-size: 14px;}
+.process span {
+    background: #00263e;
+    color: #fff;
+    font-size: 14px;
+    width: 21px;
+    height: 21px;
+    display: inline-block;
+    border-radius: 20px;
+    margin-bottom: 3px;
+}
+.process .bar {
+    width: 100%;
+    border: 2px solid #dbeafe;
+    position: absolute;
+    z-index: -1;
+    top: 11px;
+    border-radius: 10px;
+}
+.btn-delete {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    padding: 0;
+    border-radius: 100px;
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+}
+.photopreview-box {
+    position: relative;
+    text-align: center;
+}
+.modal-body {
+  padding: 50px 10px 20px;
+}
+.footer {
+  position: fixed;
+  width: 100%;
+  left: 0;
+  bottom: 0;
+  padding: 10px;
+  background: #fff;
+  border-top: 1px solid #e9e9e9;
+}
+.footer .btn {
+  margin-top: 10px;
+}
+
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    color: white;
+    font-size: 18px;
+    z-index: 9999;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid white;
+    border-top: 4px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+
+/*main에서만 사용해서 */
+#photoPreview {
+    display: block;    /* JS toggles display, ensure block for centering */
+    margin: 0 auto;    /* horizontal center */
+}
+
+
+
+/* 토글 스위치 컨테이너 */
+.toggle-container {
+    display: flex;
+    justify-content: center; /* 가운데 정렬 */
+    gap: 15px; /* 버튼 사이 간격 */
+    margin: 15px 0;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    border: 1px solid #e9ecef;
+}
+
+/* 스위치 래퍼 */
+.toggle-switch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+/* 실제 체크박스 숨김 */
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* 슬라이더 (배경) */
+.slider {
+    position: relative;
+    width: 46px;
+    height: 24px;
+    background-color: #ccc;
+    border-radius: 34px;
+    transition: .4s;
+    margin-right: 10px;
+}
+
+/* 슬라이더 동그라미 */
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: .4s;
+}
+
+/* 체크되었을 때 색상 변경 (Debug: 파랑, Binary: 검정) */
+input:checked + .slider.debug {
+    background-color: #0d6efd; /* Bootstrap Primary Blue */
+}
+input:checked + .slider.binary {
+    background-color: #212529; /* Bootstrap Dark Grey */
+}
+
+/* 체크되었을 때 동그라미 이동 */
+input:checked + .slider:before {
+    transform: translateX(22px);
+}
+
+/* 라벨 텍스트 스타일 */
+.toggle-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+    user-select: none;
+}

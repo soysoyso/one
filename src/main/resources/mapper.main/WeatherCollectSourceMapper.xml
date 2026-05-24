@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yido.road.sos.repository.main.WeatherCollectSourceMapper">
+
+    <!-- 최근 N일 사고접수 좌표 -->
+    <select id="selectIncidentLatLng"
+            resultType="com.yido.road.sos.model.LatLng">
+        SELECT DISTINCT
+            lat,
+            lng
+        FROM incident
+        WHERE lat IS NOT NULL
+          AND lng IS NOT NULL
+          AND report_date >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+    </select>
+
+    <!-- 최근 N일 포트홀 좌표 -->
+    <select id="selectPotholeLatLng"
+            resultType="com.yido.road.sos.model.LatLng">
+        SELECT DISTINCT
+            lat,
+            lng
+        FROM pothole
+        WHERE lat IS NOT NULL
+          AND lng IS NOT NULL
+          AND report_date >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+    </select>
+</mapper>

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yido.road.sos.repository.main.IncidentLogMapper">
+
+    <insert id="insertIncidentLog" parameterType="Incident">
+        /* IncidentLogMapper.insertIncidentLog - 사고접수 이력 insert */
+        INSERT INTO Incident_log (
+        report_no
+        , report_date
+        , intake_method_cd
+        , status_cd
+        , site_cd
+        , lat
+        , lng
+        <if test='addr != null and addr != ""'>
+            , addr
+        </if>
+        <if test='cellPhone != null and cellPhone != ""'>
+            , cell_phone
+        </if>
+        , rpt_img_path
+        , rpt_img_name
+        , captured_at
+        , accuracy_m
+        , captured_ts
+        , ocr_read_km
+        ) values (
+        #{reportNo}
+        , NOW()
+        , #{intakeMethodCd}
+        , #{statusCd}
+        , #{siteCd}
+        , #{lat}
+        , #{lng}
+        <if test='addr != null and addr != ""'>
+            , #{addr}
+        </if>
+        <if test='cellPhone != null and cellPhone != ""'>
+            , HEX(AES_ENCRYPT(#{cellPhone}, 'RSOS'))
+        </if>
+        , #{rptImgPath}
+        , #{rptImgName}
+        , #{capturedAt}
+        , #{accuracyM,jdbcType=INTEGER}
+        , #{capturedTs,jdbcType=BIGINT}
+        , #{ocrReadKm}
+        )
+    </insert>
+
+    <!-- incident 테이블의 최신값을 그대로 스냅샷으로 남김 -->
+    <insert id="insertFromIncident">
+        INSERT INTO incident_log (
+        report_no,
+        report_date,
+        intake_method_cd,
+        status_cd,
+        site_cd,
+        lat,
+        lng,
+        accuracy_m,
+        captured_at,
+        captured_ts,
+        server_received_at,
+        addr,
+        cell_phone,
+        rpt_img_path,
+        rpt_img_name,
+        process_note,
+        img_path,
+        img_name,
+        img_path2,
+        img_name2,
+        img_path3,
+        img_name3,
+        img_path4,
+        img_name4,
+        manager_id,
+        update_datetime,
+        update_ip,
+        ocr_read_km
+        )
+        SELECT
+        i.report_no,
+        i.report_date,
+        i.intake_method_cd,
+        i.status_cd,
+        i.site_cd,
+        i.lat,
+        i.lng,
+        i.accuracy_m,
+        i.captured_at,
+        i.captured_ts,
+        i.server_received_at,
+        i.addr,
+        i.cell_phone,
+        i.rpt_img_path,
+        i.rpt_img_name,
+        i.process_note,
+        i.img_path,
+        i.img_name,
+        i.img_path2,
+        i.img_name2,
+        i.img_path3,
+        i.img_name3,
+        i.img_path4,
+        i.img_name4,
+        i.manager_id,
+        i.update_datetime,
+        i.update_ip,
+        i.ocr_read_km
+        FROM incident i
+        WHERE i.report_no = #{reportNo};
+
+    </insert>
+
+    <select id="selectTimelineByReportNo" resultType="TimelineItem">
+        /* IncidentLogMapper.selectTimelineByReportNo - 사고 타임라인(상태변경 이력) 조회 */
+        SELECT IFNULL(a.update_datetime, a.report_date) AS eventDt
+        , b.cd_code_nm AS statusNm
+        , c.user_nm
+        FROM incident_log a
+        LEFT JOIN cd_common b ON a.status_cd = b.cd_code AND b.cd_div = '002' AND b.use_yn = 'Y'
+        LEFT JOIN admin_user c ON a.manager_id = c.user_id AND c.use_yn = 1
+        WHERE a.report_no = #{reportNo}
+    </select>
+
+</mapper>

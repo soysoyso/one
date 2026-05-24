@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yido.road.sos.repository.main.IncidentMapper">
+
+    <select id="selectMaxReportNoByDate"
+            parameterType="map"
+            resultType="string">
+        /* IncidentMapper.selectMaxReportNoByDate - 접수번호 추출 */
+        SELECT MAX(report_no)
+        FROM incident
+        WHERE report_no LIKE CONCAT(#{prefix}, #{today}, '%')
+    </select>
+
+    <select id="selectIncidentByReportNo" resultType="Incident">
+        /* IncidentMapper.selectIncidentByReportNo - 접수내역 조회 */
+        SELECT a.site_cd
+            , a.site_cd_list
+            , b.site_name
+            , a.report_no
+            , a.report_date
+            , a.addr
+            , CONVERT(AES_DECRYPT(UNHEX(a.cell_phone), 'RSOS') USING utf8) AS cell_phone
+            , a.rpt_img_path
+            , a.rpt_img_name
+        FROM Incident a
+        LEFT JOIN site_info b ON a.site_cd = b.site_cd AND b.del_yn = 'N'
+        WHERE report_no = #{reportNo}
+    </select>
+
+    <select id="selectIncidentDetailByReportNo" resultType="Incident">
+        /* IncidentMapper.selectIncidentDetailByReportNo - 접수내역 조회 (상세) */
+        SELECT a.site_cd
+            , b.site_name
+            , a.report_no
+            , a.report_date
+            , a.intake_method_cd
+            , a.status_cd
+            , a.lat
+            , a.lng
+            , a.captured_at
+            , a.accuracy_m
+            , a.captured_ts
+            , a.addr
+            , CONVERT(AES_DECRYPT(UNHEX(a.cell_phone), 'RSOS') USING utf8) AS cell_phone
+            , a.rpt_img_path
+            , a.rpt_img_name
+            , a.process_note
+            , a.img_path
+            , a.img_name
+            , a.img_path2
+            , a.img_name2
+            , a.img_path3
+            , a.img_name3
+            , a.img_path4
+            , a.img_name4
+            , a.manager_id
+            , a.update_datetime
+            , c.cd_code_nm AS statusNm
+            , d.user_nm AS managerNm
+            , e.cd_code_nm AS intakeMethodNm
+            , a.ocr_read_km
+        FROM Incident a
+        LEFT JOIN site_info b ON a.site_cd = b.site_cd AND b.del_yn = 'N'
+        LEFT JOIN cd_common c ON a.status_cd = c.cd_code AND c.cd_div = '002' AND c.use_yn = 'Y'
+        LEFT JOIN admin_user d ON a.manager_id = d.user_id AND d.use_yn = 1
+        LEFT JOIN cd_common e ON a.intake_method_cd = e.cd_code AND e.cd_div = '001' AND e.use_yn = 'Y'
+        WHERE report_no = #{reportNo}
+    </select>
+
+    <select id="getIncidentStatusSummaryByDate"
+            resultType="map"
+            parameterType="map">
+        /* IncidentMapper.getIncidentStatusSummaryByDate - 상태별 건수 집계 (일자 기준) */
+        SELECT
+            IFNULL(SUM(CASE WHEN status_cd = 'STS001' THEN 1 ELSE 0 END), 0) AS received_cnt,
+            IFNULL(SUM(CASE WHEN status_cd = 'STS002' THEN 1 ELSE 0 END), 0) AS processing_cnt,
+            IFNULL(SUM(CASE WHEN status_cd = 'STS003' THEN 1 ELSE 0 END), 0) AS completed_cnt,
+            IFNULL(SUM(CASE WHEN status_cd = 'STS004' THEN 1 ELSE 0 END), 0) AS canceled_cnt,
+            COUNT(*) AS total_cnt
+        FROM incident
+        <where>
+            <if test="siteCdList != null and siteCdList.size() > 0">
+                ( site_cd IN
+                <foreach collection="siteCdList" item="siteCd" open="(" separator="," close=")">
+                    #{siteCd}
+                </foreach> OR report_no like 'UN%')
+            </if>
+
+            <if test='siteCd != null and siteCd != ""'>
+                AND site_cd = #{siteCd}
+            </if>
+            <![CDATA[
+        AND report_date >= STR_TO_DATE(CONCAT(#{todayDt}, ' 00:00:00'), '%Y-%m-%d %H:%i:%s')
+        AND report_date <  STR_TO_DATE(CONCAT(#{todayDt}, ' 00:00:00'), '%Y-%m-%d %H:%i:%s') + INTERVAL 1 DAY
+        ]]>
+        </where>
+    </select>
+
+    <insert id="insertIncident" parameterType="Incident">
+        /* IncidentMapper.insertIncident - 사고접수 insert */
+        INSERT INTO Incident
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            report_no,
+            report_date,
+            intake_method_cd,
+            status_cd,
+            <if test="siteCd != null">site_cd,</if>
+            <if test="siteCdList != null">site_cd_list,</if>
+            <if test="lat != null">lat,</if>
+            <if test="lng != null">lng,</if>
+            <if test="addr != null and addr != ''">addr,</if>
+            <if test="cellPhone != null and cellPhone != ''">cell_phone,</if>
+            <if test="imgPath != null and imgPath != ''">img_path,</if>
+            <if test="imgName != null and imgName != ''">img_name,</if>
+            <if test="rptImgPath != null and rptImgPath != ''">rpt_img_path,</if>
+            <if test="rptImgName != null and rptImgName != ''">rpt_img_name,</if>
+            <if test="capturedAt != null">captured_at,</if>
+            <if test="accuracyM != null">accuracy_m,</if>
+            <if test="capturedTs != null">captured_ts,</if>
+            <if test="managerId != null">manager_id,</if>
+            <if test="processNote != null">process_note,</if>
+            <if test="statusCd == 'STS003'">update_datetime,</if>
+            <if test="ocrReadKm != null">ocr_read_km,</if>
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            #{reportNo},
+            NOW(),
+            #{intakeMethodCd},
+            #{statusCd},
+            <if test="siteCd != null"> #{siteCd},</if>
+            <if test="siteCdList != null">#{siteCdList},</if>
+            <if test="lat != null">#{lat},</if>
+            <if test="lng != null">#{lng},</if>
+            <if test="addr != null and addr != ''">#{addr},</if>
+            <if test="cellPhone != null and cellPhone != ''">HEX(AES_ENCRYPT(#{cellPhone}, 'RSOS')),</if>
+            <if test="imgPath != null and imgPath != ''">#{imgPath},</if>
+            <if test="imgName != null and imgName != ''">#{imgName},</if>
+            <if test="rptImgPath != null and rptImgPath != ''">#{rptImgPath},</if>
+            <if test="rptImgName != null and rptImgName != ''">#{rptImgName},</if>
+            <if test="capturedAt != null">#{capturedAt,jdbcType=TIMESTAMP},</if>
+            <if test="accuracyM != null">#{accuracyM,jdbcType=INTEGER},</if>
+            <if test="capturedTs != null">#{capturedTs,jdbcType=BIGINT},</if>
+            <if test="managerId != null">#{managerId},</if>
+            <if test="processNote != null">#{processNote},</if>
+            <if test="statusCd == 'STS003'">NOW(),</if>
+            <if test="ocrReadKm != null">#{ocrReadKm},</if>
+        </trim>
+    </insert>
+
+    <update id="updateInCident">
+        /* IncidentMapper.updateInCident - 사고접수 수정 */
+        UPDATE incident
+        SET status_cd = #{statusCd}
+            , intake_method_cd = #{intakeMethodCd}
+            , process_note = #{processNote}
+            , addr = #{addr}
+            <if test='cellPhone != null'>
+                , cell_phone = HEX(AES_ENCRYPT(#{cellPhone}, 'RSOS'))
+            </if>
+            <if test='imgPath != null'>
+                , img_path = #{imgPath}
+            </if>
+            <if test='imgPath == null'>
+                , img_path = null
+            </if>
+            <if test='imgName != null'>
+                , img_name = #{imgName}
+            </if>
+            <if test='imgName == null'>
+                , img_name = null
+            </if>
+            <if test='siteCd != null'>
+                , site_cd = #{siteCd}
+            </if>
+            <if test='ocrReadKm != null'>
+                , ocr_read_km = #{ocrReadKm}
+            </if>
+            <if test='lat != null'>
+                , lat = #{lat}
+            </if>
+            <if test='lng != null'>
+                , lng = #{lng}
+            </if>
+            , manager_id = #{managerId}
+            , update_datetime = NOW()
+        WHERE report_no = #{reportNo}
+    </update>
+
+    <select id="selectIncidentList" parameterType="map" resultType="Incident">
+        /* IncidentMapper.selectIncidentList - 사고접수 조회 */
+        SELECT d.site_name
+            , a.report_no
+            , a.report_date
+            , a.update_datetime
+            , a.addr
+            , CONVERT(AES_DECRYPT(UNHEX(a.cell_phone), 'RSOS') USING utf8) AS cell_phone
+            , a.status_cd
+            , b.cd_code_nm AS statusNm
+            , c.cd_code_nm AS intakeMethodNm
+            , a.manager_id
+            , a.process_note
+        FROM incident a
+        LEFT JOIN cd_common b ON a.status_cd = b.cd_code AND b.cd_div = '002' AND b.use_yn = 'Y'
+        LEFT JOIN cd_common c ON a.intake_method_cd = c.cd_code AND c.cd_div = '001' AND c.use_yn = 'Y'
+        LEFT JOIN site_info d ON a.site_cd = d.site_cd AND d.del_yn = 'N'
+        WHERE 1=1
+        <include refid="IncidentListConditions"/>
+        ORDER BY a.report_date DESC
+
+        <if test='offset != null and pageSize != null'>
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectIncidentCount" parameterType="map" resultType="int">
+        /* IncidentMapper.selectIncidentCount - 사고접수 건수 */
+        SELECT COUNT(*)
+        FROM incident a
+        LEFT JOIN cd_common b ON a.status_cd = b.cd_code AND b.cd_div = '002' AND b.use_yn = 'Y'
+
+        WHERE 1=1
+        <include refid="IncidentListConditions"/>
+    </select>
+
+    <!-- 공통 WHERE 조건 정의  -->
+    <sql id="IncidentListConditions">
+
+        <if test='siteCd != null and siteCd != ""'>
+            AND a.site_cd = #{siteCd}
+        </if>
+        <if test="siteCdList != null and siteCdList.size() > 0">
+            AND (
+            a.site_cd IN
+            <foreach collection="siteCdList" item="siteCd" open="(" separator="," close=")">
+                #{siteCd}
+            </foreach>
+            OR (a.report_no LIKE 'UN%' AND a.site_cd IS NULL)
+            )
+        </if>
+
+        <if test='reportNo != null and reportNo != ""'>
+            AND a.report_no = #{reportNo}
+        </if>
+        <if test='strtDt != null and endDt != null'>
+            AND report_date BETWEEN #{strtDt} AND #{endDt}
+        </if>
+        <if test='statusCd != null and statusCd != ""'>
+            AND a.status_cd = #{statusCd}
+        </if>
+        <if test='cellPhone != null and cellPhone != ""'>
+            AND CONVERT(AES_DECRYPT(UNHEX(a.cell_phone), 'RSOS') USING utf8) LIKE CONCAT('%',#{cellPhone},'%')
+        </if>
+    </sql>
+
+    <select id="selectIncidentImgByReportNo" resultType="Incident">
+        /* IncidentMapper.selectIncidentImgByReportNo - 접수번호로 사고접수 이미지조회 */
+        SELECT
+            rpt_img_path
+            , rpt_img_name
+            , img_path
+            , img_name
+            , img_path2
+            , img_name2
+            , img_path3
+            , img_name3
+            , img_path4
+            , img_name4
+        FROM Incident a
+        WHERE report_no = #{reportNo}
+    </select>
+
+</mapper>

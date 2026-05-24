@@ -1,0 +1,801 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yido.road.sos.repository.main.AdminPotholeMapper">
+
+    <select id="selectImsPotholeList" parameterType="map" resultType="map">
+        /* AdminPotholeMapper.selectImsPotholeList - 현장관리 목록 조회 */
+        <![CDATA[
+        SELECT s.site_name AS siteName
+            , p.report_no AS reportNo
+            , DATE_FORMAT(p.report_date, '%y-%m-%d %H:%i') AS reportDate
+            , p.status_cd AS statusCd
+            , cc.cd_code_nm AS statusNm
+            , p.process_note AS workContent
+            , p.direction_cd AS directionCd
+            , p.pavement_type_cds AS pavementTypeCds
+            , p.occur_place_cds   AS occurPlaceCds
+            , p.addr
+            , p.sta_text AS staText
+            , DATE_FORMAT(p.work_start_at, '%y-%m-%d %H:%i') AS workStartAt
+            , DATE_FORMAT(p.work_end_at, '%y-%m-%d %H:%i') AS workEndAt
+             , p.receipt_gb_cd AS receiptGbCd
+             , c.CD_CODE_NM AS receiptGbNm
+        FROM pothole p
+            LEFT JOIN site_info s ON s.site_cd = p.site_cd AND s.del_yn = 'N'
+            LEFT JOIN cd_common cc ON cc.cd_div = '005' AND cc.use_yn = 'Y' AND cc.cd_code = p.status_cd
+            LEFT JOIN cd_common c ON p.receipt_gb_cd = c.CD_CODE and c.CD_DIV = '006' and c.USE_YN = 'Y'
+        WHERE 1=1
+        AND p.del_yn = 'N'
+        ]]>
+        <include refid="ImsPotholeListConditions"/>
+        <![CDATA[
+            ORDER BY p.report_date DESC
+        ]]>
+        <if test="offset != null and pageSize != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectImsPotholeCount" parameterType="map" resultType="int">
+        /* AdminPotholeMapper.selectImsPotholeCount - 현장관리 건수 조회 */
+        SELECT COUNT(*)
+        FROM pothole p
+        LEFT JOIN site_info s ON s.site_cd = p.site_cd AND s.del_yn = 'N'
+        WHERE 1=1
+        AND p.del_yn = 'N'
+        <include refid="ImsPotholeListConditions"/>
+    </select>
+
+    <!-- ✅ 공통 WHERE 조건 -->
+    <sql id="ImsPotholeListConditions">
+
+        <!-- 권한 필터: ATH200은 siteCdList 넣고, ATH100은 아예 안 넣는 방식 추천 -->
+        <if test="siteCdList != null and siteCdList.size() > 0">
+            AND p.site_cd IN
+            <foreach collection="siteCdList" item="siteCd" open="(" separator="," close=")">
+                #{siteCd}
+            </foreach>
+        </if>
+
+        <!-- 화면 상단 '고속도로' select -->
+        <if test="siteCd != null and siteCd != ''">
+            AND p.site_cd = #{siteCd}
+        </if>
+
+        <!-- 상태 -->
+        <if test="statusCd != null and statusCd != ''">
+            AND p.status_cd = #{statusCd}
+        </if>
+
+        <!-- 접수유형 -->
+        <if test="workTypeCd != null and workTypeCd != ''">
+            AND p.receipt_gb_cd = #{workTypeCd}
+        </if>
+
+        <!-- 기간 -->
+        <if test="strtDt != null and strtDt != '' and endDt != null and endDt != ''">
+            AND p.report_date BETWEEN #{strtDt} AND #{endDt}
+        </if>
+
+        <!-- 내용 검색(키워드): report_no / addr / process_note / detail_info / sta_text / sta_ref_name -->
+        <if test="keyword != null and keyword != ''">
+            AND (
+            p.report_no LIKE CONCAT('%', #{keyword}, '%')
+            OR p.addr LIKE CONCAT('%', #{keyword}, '%')
+            OR p.process_note LIKE CONCAT('%', #{keyword}, '%')
+            OR p.detail_info LIKE CONCAT('%', #{keyword}, '%')
+            OR p.sta_text LIKE CONCAT('%', #{keyword}, '%')
+            OR p.sta_ref_name LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+
+        <!-- (선택) 접수구분이 포트홀만이면 -->
+        <!--
+        <if test="receiptGbCd != null and receiptGbCd != ''">
+            AND p.receipt_gb_cd = #{receiptGbCd}
+        </if>
+        -->
+    </sql>
+
+    <update id="updatePotholeStatusBulk" parameterType="map">
+        /* AdminPotholeMapper.updatePotholeStatusBulk - 포트홀 상태 일괄 변경 */
+        UPDATE pothole
+        SET
+            status_cd = #{statusCd},
+            update_datetime = NOW()
+            <if test="updateIp != null and updateIp != ''">
+                , update_ip = #{updateIp}
+            </if>
+        WHERE report_no IN
+        <foreach collection="reportNos" item="rn" open="(" separator="," close=")">
+            #{rn}
+        </foreach>
+    </update>
+
+    <select id="selectImsPotholeDetail" parameterType="string" resultType="map">
+        /* 접수내용 상세보기 */
+        <![CDATA[
+        SELECT
+            p.report_no        AS reportNo,
+            p.status_cd        AS statusCd,
+            cc.cd_code_nm      AS statusNm,
+            p.site_cd          AS siteCd,
+            s.site_name        AS siteName,
+            s.parent_site_cd AS parentSiteCd,
+            p.direction_cd     AS directionCd,
+            p.addr             AS addr,
+            p.detail_info      AS detailInfo,
+            p.delivery_note    AS deliveryNote,
+            p.pavement_type_cds AS pavementTypeCds,
+            p.occur_place_cds   AS occurPlaceCds,
+            p.receiver_id      AS receiverId,
+            r.USER_NM          AS receiverNm,
+            p.manager_id       AS managerId,
+            m.USER_NM          AS managerNm,
+            DATE_FORMAT(p.report_date, '%Y-%m-%d %H:%i:%s') AS reportDate,
+            DATE_FORMAT(p.work_start_at, '%Y-%m-%d %H:%i:%s') AS workStartAt,
+            DATE_FORMAT(p.work_end_at,   '%Y-%m-%d %H:%i:%s') AS workEndAt,
+            p.process_note     AS processNote,
+            p.sta_meters       AS staMeters,
+            p.sta_km_decimal   AS staKmDecimal,
+            FORMAT(p.sta_km_decimal, 3) AS staKmDecimalText,
+            p.sta_text         AS staText,
+            p.sta_ref_name     AS staRefName,
+            p.lat              AS lat,
+            p.lng              AS lng,
+            p.accuracy_m       AS accuracyM,
+            p.captured_at      AS capturedAt,
+            p.captured_ts      AS capturedTs,
+            p.weather_cd        AS weatherCd,
+            p.temp              AS temp,
+            p.work_temp          AS workTemp,
+            p.work_weather_cd   AS workWeatherCd,
+            cc1.cd_code_nm      AS weatherNm,
+            cc2.cd_code_nm      AS workWeatherNm,
+            p.receipt_gb_cd   AS receiptGbCd,
+            p.doc_no AS docNo,
+            p.lane_info AS laneInfo,
+            p.report_remark AS reportRemark,
+            p.work_qty AS workQty,
+            p.convert_work_qty AS convertWorkQty,
+            p.account_work_qty AS accountWorkQty
+        FROM pothole p
+         LEFT JOIN site_info s ON s.site_cd = p.site_cd AND s.del_yn = 'N'
+         LEFT JOIN cd_common cc ON cc.cd_div='005' AND cc.use_yn='Y' AND cc.cd_code=p.status_cd
+         LEFT JOIN cd_common cc1 ON cc1.cd_div='007' AND cc1.use_yn='Y' AND cc1.cd_code=p.weather_cd
+         LEFT JOIN cd_common cc2 ON cc2.cd_div='007' AND cc2.use_yn='Y' AND cc2.cd_code=p.work_weather_cd
+         LEFT JOIN admin_user r ON r.USER_ID = p.receiver_id AND r.USE_YN = 1
+         LEFT JOIN admin_user m ON m.USER_ID = p.manager_id AND m.USE_YN = 1
+        WHERE p.report_no = #{value}
+          AND p.del_yn = 'N'
+        ]]>
+    </select>
+
+    <update id="updatePotholeAll" parameterType="Pothole">
+        /* AdminPotholeMapper.updatePotholeAll - 현장관리 접수/작업 정보 수정 */
+        UPDATE pothole
+        <set>
+
+            <!-- ===== 접수 영역 ===== -->
+            <if test="receiverId != null and receiverId != ''">
+                receiver_id = #{receiverId},
+            </if>
+
+            <if test="reportDate != null and reportDate != ''">
+                report_date = #{reportDate},
+            </if>
+
+            <if test="directionCd != null and directionCd != ''">
+                direction_cd = #{directionCd},
+            </if>
+
+            <if test="detailInfo != null">
+                detail_info = #{detailInfo},
+            </if>
+
+            <if test="deliveryNote != null">
+                delivery_note = #{deliveryNote},
+            </if>
+
+            <if test="processNote != null">
+                process_note = #{processNote},
+            </if>
+
+            <if test="addr != null">
+                addr = #{addr},
+            </if>
+
+            <if test="weatherCd != null and weatherCd != ''">
+                weather_cd = #{weatherCd},
+            </if>
+            <if test="workWeatherCd != null and workWeatherCd != ''">
+                work_weather_cd = #{workWeatherCd},
+            </if>
+
+            <if test="lat != null and lat != ''">
+                lat = #{lat},
+            </if>
+            <if test="lng != null and lng != ''">
+                lng = #{lng},
+            </if>
+            <if test="accuracyM != null and accuracyM != ''">
+                accuracy_m = #{accuracyM},
+            </if>
+
+            <if test="capturedAt != null">
+                captured_at = #{capturedAt},
+            </if>
+            <if test="capturedTs != null and capturedTs != ''">
+                captured_ts = #{capturedTs},
+            </if>
+
+            <if test="siteCd != null and siteCd != ''">
+                site_cd = #{siteCd},
+            </if>
+
+            <if test="receiptGbCd != null and receiptGbCd != ''">
+                receipt_gb_cd = #{receiptGbCd},
+            </if>
+
+            <if test="staMeters != null">
+                sta_meters = #{staMeters},
+            </if>
+            <if test="staKmDecimal != null">
+                sta_km_decimal = #{staKmDecimal},
+            </if>
+            <if test="staText != null and staText != ''">
+                sta_text = #{staText},
+            </if>
+
+            <if test="managerId != null and managerId != ''">
+                manager_id = #{managerId},
+            </if>
+
+            <if test="pavementTypeCds != null">
+                pavement_type_cds = #{pavementTypeCds},
+            </if>
+
+            <if test="occurPlaceCds != null">
+                occur_place_cds = #{occurPlaceCds},
+            </if>
+
+            <if test="laneInfo != null">
+                lane_info = #{laneInfo},
+            </if>
+
+            <if test="reportRemark != null">
+                report_remark = #{reportRemark},
+            </if>
+
+            <if test="workQty != null">
+                work_qty = #{workQty},
+            </if>
+
+            <if test="convertWorkQty != null">
+                convert_work_qty = #{convertWorkQty},
+            </if>
+
+            <if test="accountWorkQty != null">
+                account_work_qty = #{accountWorkQty},
+            </if>
+
+            <if test="workStartAt != null">
+                work_start_at = #{workStartAt, jdbcType=TIMESTAMP},
+            </if>
+
+            <!-- ✅ workEndAt 우선 적용 (사용자가 직접 입력한 종료일시) -->
+            <if test="workEndAt != null">
+                work_end_at = #{workEndAt, jdbcType=TIMESTAMP},
+            </if>
+
+            <!-- ✅ 상태가 DONE/COMPLETE인데 workEndAt을 안보냈으면 NOW() 자동세팅 -->
+            <if test="workEndAt == null and statusCd != null and (statusCd == 'DONE' or statusCd == 'COMPLETE')">
+                work_end_at = IFNULL(work_end_at, NOW()),
+            </if>
+            <if test="statusCd != null and statusCd != ''">
+                status_cd = #{statusCd},
+            </if>
+            <if test="temp != null">
+                temp = #{temp},
+            </if>
+            <if test="workTemp != null">
+                work_temp = #{workTemp},
+            </if>
+            update_datetime = NOW()
+            <if test="updateIp != null and updateIp != ''">
+                , update_ip = #{updateIp}
+            </if>
+        </set>
+        WHERE report_no = #{reportNo}
+    </update>
+
+    <insert id="insertPotholeAll" parameterType="com.yido.road.sos.model.Pothole">
+        /* AdminPotholeMapper.insertPotholeAll - 현장관리 접수 정보 등록 */
+
+        INSERT INTO pothole
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            report_no,
+            doc_no,
+            report_date,
+            status_cd,
+            <if test="siteCd != null and siteCd != ''">site_cd,</if>
+            <if test="adminSiteCd != null and adminSiteCd != ''">admin_site_cd,</if>
+
+            <if test="pavementTypeCds != null and pavementTypeCds != ''">pavement_type_cds,</if>
+            <if test="occurPlaceCds != null and occurPlaceCds != ''">occur_place_cds,</if>
+
+            <if test="lat != null and lat != ''">lat,</if>
+            <if test="lng != null and lng != ''">lng,</if>
+            <if test="accuracyM != null and accuracyM != ''">accuracy_m,</if>
+            <if test="capturedAt != null and capturedAt != ''">captured_at,</if>
+            <if test="capturedTs != null and capturedTs != ''">captured_ts,</if>
+
+            <if test="addr != null and addr != ''">addr,</if>
+            <if test="cellPhone != null and cellPhone != ''">cell_phone,</if>
+
+            <if test="detailInfo != null and detailInfo != ''">detail_info,</if>
+            <if test="deliveryNote != null">delivery_note,</if>
+            <if test="receiverId != null and receiverId != ''">receiver_id,</if>
+
+            receipt_gb_cd,
+
+            <if test="processNote != null">process_note,</if>
+            <if test="managerId != null and managerId != ''">manager_id,</if>
+            <if test="directionCd != null and directionCd != ''">direction_cd,</if>
+            <if test="weatherCd != null and weatherCd != ''">weather_cd,</if>
+            <if test="workWeatherCd != null and workWeatherCd != ''">work_weather_cd,</if>
+
+            <if test="laneInfo != null and laneInfo != ''">lane_info,</if>
+            <if test="reportRemark != null and reportRemark != ''">report_remark,</if>
+            <if test="workQty != null">work_qty,</if>
+            <if test="convertWorkQty != null">convert_work_qty,</if>
+            <if test="accountWorkQty != null">account_work_qty,</if>
+
+            <if test="staMeters != null and staMeters != ''">sta_meters,</if>
+            <if test="staKmDecimal != null and staKmDecimal != ''">sta_km_decimal,</if>
+            <if test="staText != null and staText != ''">sta_text,</if>
+
+            <if test="workStartAt != null">
+                work_start_at,
+            </if>
+            <if test="workEndAt != null">
+                work_end_at,
+            </if>
+
+            reg_datetime,
+            <if test="temp != null and temp != ''">temp,</if>
+            <if test="workTemp != null and workTemp != ''">work_temp</if>
+        </trim>
+
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            #{reportNo},
+            #{docNo},
+            #{reportDate},
+            #{statusCd},
+
+            <if test="siteCd != null and siteCd != ''">#{siteCd},</if>
+            <if test="adminSiteCd != null and adminSiteCd != ''">#{adminSiteCd},</if>
+
+            <if test="pavementTypeCds != null and pavementTypeCds != ''">#{pavementTypeCds},</if>
+            <if test="occurPlaceCds != null and occurPlaceCds != ''">#{occurPlaceCds},</if>
+
+            <if test="lat != null and lat != ''">#{lat},</if>
+            <if test="lng != null and lng != ''">#{lng},</if>
+            <if test="accuracyM != null and accuracyM != ''">#{accuracyM},</if>
+            <if test="capturedAt != null and capturedAt != ''">#{capturedAt},</if>
+            <if test="capturedTs != null and capturedTs != ''">#{capturedTs},</if>
+
+            <if test="addr != null and addr != ''">#{addr},</if>
+            <if test="cellPhone != null and cellPhone != ''">
+                HEX(AES_ENCRYPT(#{cellPhone}, 'RSOS')),
+            </if>
+
+            <if test="detailInfo != null and detailInfo != ''">#{detailInfo},</if>
+            <if test="deliveryNote != null">#{deliveryNote},</if>
+            <if test="receiverId != null and receiverId != ''">#{receiverId},</if>
+
+            <choose>
+                <when test="receiptGbCd != null and receiptGbCd != ''">#{receiptGbCd}</when>
+                <otherwise>'POTHOLE'</otherwise>
+            </choose>,
+
+            <if test="processNote != null">#{processNote},</if>
+            <if test="managerId != null and managerId != ''">#{managerId},</if>
+            <if test="directionCd != null and directionCd != ''">#{directionCd},</if>
+            <if test="weatherCd != null and weatherCd != ''">#{weatherCd},</if>
+            <if test="workWeatherCd != null and workWeatherCd != ''">#{workWeatherCd},</if>
+
+            <if test="laneInfo != null and laneInfo != ''">#{laneInfo},</if>
+            <if test="reportRemark != null and reportRemark != ''">#{reportRemark},</if>
+            <if test="workQty != null">#{workQty},</if>
+            <if test="convertWorkQty != null">#{convertWorkQty},</if>
+            <if test="accountWorkQty != null">#{accountWorkQty},</if>
+
+            <if test="staMeters != null and staMeters != ''">#{staMeters},</if>
+            <if test="staKmDecimal != null and staKmDecimal != ''">#{staKmDecimal},</if>
+            <if test="staText != null and staText != ''">#{staText},</if>
+
+            <if test="workStartAt != null">#{workStartAt}, </if>
+            <if test="workEndAt != null">#{workEndAt},  </if>
+            NOW(),
+            <if test="temp != null and temp != ''">#{temp},</if>
+            <if test="workTemp != null and workTemp != ''">#{workTemp}</if>
+        </trim>
+
+    </insert>
+
+    <delete id="deleteByReportNo">
+        DELETE FROM pothole_work_equipment
+        WHERE report_no = #{reportNo}
+    </delete>
+
+    <insert id="insertBatch">
+        INSERT INTO pothole_work_equipment
+        (report_no, sort_ord, equip_name, own_qty, use_qty, remark)
+        VALUES
+        <foreach collection="list" item="r" separator=",">
+            (#{reportNo},
+            #{r.sortOrd},
+            #{r.equipName},
+            #{r.ownQty},
+            #{r.useQty},
+            #{r.remark})
+        </foreach>
+    </insert>
+
+    <delete id="deleteWorkEquipmentByReportNo">
+        /* AdminPotholeMapper.deleteWorkEquipmentByReportNo - 작업 장비 삭제 */
+        DELETE FROM pothole_work_equipment
+        WHERE report_no = #{reportNo}
+    </delete>
+
+    <insert id="insertWorkEquipmentBatch">
+        /* AdminPotholeMapper.insertWorkEquipmentBatch - 작업 장비 일괄 등록 */
+        INSERT INTO pothole_work_equipment
+        (report_no, sort_ord, equip_name, own_qty, use_qty)
+        VALUES
+        <foreach collection="list" item="r" separator=",">
+            (#{reportNo},
+            #{r.sortOrd},
+            #{r.equipName},
+            #{r.ownQty},
+            #{r.useQty})
+        </foreach>
+    </insert>
+
+    <delete id="deleteWorkPersonnelByReportNo">
+        /* AdminPotholeMapper.deleteWorkPersonnelByReportNo - 작업 인력 삭제 */
+        DELETE FROM pothole_work_personnel
+        WHERE report_no = #{reportNo}
+    </delete>
+
+    <insert id="insertWorkPersonnelBatch">
+        /* AdminPotholeMapper.insertWorkPersonnelBatch - 작업 인력 일괄 등록 */
+        INSERT INTO pothole_work_personnel
+        (report_no, sort_ord, person_name, dept_name, labor_cost)
+        VALUES
+        <foreach collection="list" item="r" separator=",">
+            (#{reportNo},
+            #{r.sortOrd},
+            #{r.personName},
+            #{r.deptName},
+            #{r.laborCost})
+        </foreach>
+    </insert>
+
+    <delete id="deleteWorkMaterialByReportNo">
+        /* AdminPotholeMapper.deleteWorkMaterialByReportNo - 작업 자재 삭제 */
+        DELETE FROM pothole_work_material
+        WHERE report_no = #{reportNo}
+    </delete>
+
+    <insert id="insertWorkMaterialBatch">
+        /* AdminPotholeMapper.insertWorkMaterialBatch - 작업 자재 일괄 등록 */
+        INSERT INTO pothole_work_material
+        (report_no, sort_ord, material_name, spec, unit, use_qty, remain_qty, amount)
+        VALUES
+        <foreach collection="list" item="r" separator=",">
+            (#{reportNo},
+            #{r.sortOrd},
+            #{r.materialName},
+            #{r.spec},
+            #{r.unit},
+            #{r.useQty},
+            #{r.remainQty},
+            #{r.amount})
+        </foreach>
+    </insert>
+
+    <delete id="deleteWorkScopeByReportNo">
+        /* AdminPotholeMapper.deleteWorkScopeByReportNo - 작업 범위 삭제 */
+        DELETE FROM pothole_work_scope
+        WHERE report_no = #{reportNo}
+    </delete>
+
+    <insert id="insertWorkScopeBatch">
+        /* AdminPotholeMapper.insertWorkScopeBatch - 작업 범위 일괄 등록 */
+        INSERT INTO pothole_work_scope
+        (report_no, sort_ord, width_m, height_m, area_m2, depth_cm, span_m)
+        VALUES
+        <foreach collection="list" item="r" separator=",">
+            (#{reportNo},
+            #{r.sortOrd},
+            #{r.widthM},
+            #{r.heightM},
+            #{r.areaM2},
+            #{r.depthCm},
+            #{r.spanM})
+        </foreach>
+    </insert>
+
+    <select id="selectWorkEquipmentByReportNo" resultType="map">
+        /* AdminPotholeMapper.selectWorkEquipmentByReportNo - 작업 장비 조회 */
+        SELECT
+            sort_ord   AS sortOrd,
+            equip_name AS equipName,
+            own_qty    AS ownQty,
+            use_qty    AS useQty,
+            remark     AS remark
+        FROM pothole_work_equipment
+        WHERE report_no = #{reportNo}
+        ORDER BY sort_ord ASC, id ASC
+    </select>
+
+    <select id="selectWorkPersonnelByReportNo" resultType="map">
+        /* AdminPotholeMapper.selectWorkPersonnelByReportNo - 작업 인력 조회 */
+        SELECT
+            sort_ord     AS sortOrd,
+            person_name  AS personName,
+            dept_name    AS deptName,
+            labor_cost   AS laborCost
+        FROM pothole_work_personnel
+        WHERE report_no = #{reportNo}
+        ORDER BY sort_ord ASC, id ASC
+    </select>
+
+    <select id="selectWorkMaterialByReportNo" resultType="map">
+        /* AdminPotholeMapper.selectWorkMaterialByReportNo - 작업 자재 조회 */
+        SELECT
+            sort_ord        AS sortOrd,
+            material_name   AS materialName,
+            spec            AS spec,
+            unit            AS unit,
+            use_qty         AS useQty,
+            remain_qty      AS remainQty,
+            amount          AS amount
+        FROM pothole_work_material
+        WHERE report_no = #{reportNo}
+        ORDER BY sort_ord ASC, id ASC
+    </select>
+
+    <select id="selectWorkScopeByReportNo" resultType="map">
+        /* AdminPotholeMapper.selectWorkScopeByReportNo - 작업 범위 조회 */
+        SELECT
+            sort_ord   AS sortOrd,
+            width_m    AS widthM,
+            height_m   AS heightM,
+            area_m2    AS areaM2,
+            depth_cm   AS depthCm,
+            span_m     AS spanM
+        FROM pothole_work_scope
+        WHERE report_no = #{reportNo}
+        ORDER BY sort_ord ASC, id ASC
+    </select>
+
+    <select id="selectReportPhotoMain" resultType="map">
+        SELECT
+            pp.report_no  AS reportNo
+             , pp.img_path   AS imgPath
+             , pp.img_name   AS imgName
+             , pp.sort_ord   AS sortOrd
+        FROM pothole_photo pp
+        WHERE pp.report_no = #{reportNo}
+          AND pp.photo_gb  = #{photoGb}
+          AND pp.is_main   = 'Y'
+        ORDER BY pp.photo_id DESC
+            LIMIT 1
+    </select>
+
+    <select id="getImsStatusSummary" resultType="map" parameterType="map">
+        /* ImsMapper.getImsStatusSummary - 상태별 건수 집계 */
+        SELECT
+        IFNULL(SUM(CASE WHEN p.status_cd = 'RECEIVED' THEN 1 ELSE 0 END), 0) AS received_cnt,
+        IFNULL(SUM(CASE WHEN p.status_cd = 'WORKING'  THEN 1 ELSE 0 END), 0) AS working_cnt,
+        IFNULL(SUM(CASE WHEN p.status_cd IN ('DONE') THEN 1 ELSE 0 END), 0) AS done_cnt,
+        IFNULL(SUM(CASE WHEN p.status_cd = 'HOLD'     THEN 1 ELSE 0 END), 0) AS hold_cnt,
+        COUNT(*) AS total_cnt
+        FROM pothole p
+        <where>
+            AND p.del_yn = 'N'
+            <!-- ✅ 권한 siteCdList 필터 -->
+            <if test="siteCdList != null and siteCdList.size() > 0">
+                AND p.site_cd IN
+                <foreach collection="siteCdList" item="sc" open="(" separator="," close=")">
+                    #{sc}
+                </foreach>
+            </if>
+
+            <!-- ✅ 화면에서 특정 현장 선택 -->
+            <if test="siteCd != null and siteCd != ''">
+                AND p.site_cd = #{siteCd}
+            </if>
+
+            <!-- ✅ 기간 -->
+            <if test="strtDt != null and strtDt != ''">
+                AND p.report_date <![CDATA[>=]]> #{strtDt}
+            </if>
+            <if test="endDt != null and endDt != ''">
+                AND p.report_date <![CDATA[<=]]> #{endDt}
+            </if>
+
+
+        </where>
+    </select>
+
+    <select id="selectPotholeHistoryByReportNo" parameterType="string" resultType="map">
+        SELECT
+            h.history_id        AS historyId
+             , h.report_no         AS reportNo
+             , h.action_type       AS actionType
+             , h.changed_fields    AS changedFields
+             , h.before_data       AS beforeData
+             , h.after_data        AS afterData
+             , h.action_user_id    AS actionUserId
+             , IFNULL(au.USER_NM, h.action_user_id) AS actionUserNm
+             , h.action_memo       AS actionMemo
+             , DATE_FORMAT(h.action_datetime, '%Y-%m-%d %H:%i:%s') AS actionDatetime
+        FROM pothole_history h
+                 LEFT JOIN admin_user au ON au.USER_ID = h.action_user_id AND au.USE_YN = 1
+        WHERE h.report_no = #{reportNo}
+        ORDER BY h.action_datetime DESC, h.history_id DESC
+    </select>
+
+    <select id="selectLedgerRows" parameterType="list" resultType="hashmap">
+        SELECT
+        p.report_no AS reportNo,
+        DATE_FORMAT(p.report_date, '%Y') AS reportYear,
+        DATE_FORMAT(p.report_date, '%m') AS reportMonth,
+        s.site_name AS siteName,
+        p.addr AS region,
+
+        CASE
+        WHEN p.direction_cd = 'UP' THEN '상행'
+        WHEN p.direction_cd = 'DOWN' THEN '하행'
+        ELSE ''
+        END AS directionNm,
+
+        CASE
+        WHEN p.sta_text IS NOT NULL AND p.sta_text != '' THEN CONCAT('STA ', p.sta_text)
+        ELSE ''
+        END AS locationInfo,
+
+        p.detail_info AS detailInfo,
+
+        DATE_FORMAT(p.report_date, '%Y.%m.%d') AS reportDate,
+        DATE_FORMAT(p.report_date, '%m/%d') AS reportDateMmdd,
+        DATE_FORMAT(p.work_end_at, '%Y.%m.%d') AS workDate,
+        DATE_FORMAT(p.work_end_at, '%m/%d') AS workDateMmdd,
+        DATE_FORMAT(p.report_date, '%H:%i') AS reportTime,
+
+        cw.cd_code_nm AS weatherNm,
+
+        DATE_FORMAT(p.work_end_at, '%H:%i') AS workTime,
+
+        cww.cd_code_nm AS workWeatherNm,
+
+        p.pavement_type_cds AS pavementTypeCds,
+        p.occur_place_cds AS occurPlaceCds,
+        p.lane_info AS laneInfo,
+        p.report_remark AS reportRemark,
+        p.work_qty AS workQty,
+        p.convert_work_qty AS convertWorkQty,
+        p.account_work_qty AS accountWorkQty,
+
+        ws.width_m AS widthM,
+        ws.height_m AS heightM,
+        ws.area_m2 AS areaM2,
+        ws.depth_cm AS depthCm,
+        ws.span_m AS spanM,
+
+        bf.img_path AS beforeImgPath,
+        bf.img_name AS beforeImgName,
+
+        af.img_path AS afterImgPath,
+        af.img_name AS afterImgName
+
+        FROM pothole p
+
+        LEFT JOIN site_info s
+        ON s.site_cd = p.site_cd
+
+        LEFT JOIN cd_common cw
+        ON cw.cd_div = '007'
+        AND cw.cd_code = p.weather_cd
+
+        LEFT JOIN cd_common cww
+        ON cww.cd_div = '007'
+        AND cww.cd_code = p.work_weather_cd
+
+        LEFT JOIN (
+        SELECT
+        t.report_no,
+        t.width_m,
+        t.height_m,
+        t.area_m2,
+        t.depth_cm,
+        t.span_m
+        FROM pothole_work_scope t
+        INNER JOIN (
+        SELECT
+        report_no,
+        MIN(sort_ord) AS min_sort_ord
+        FROM pothole_work_scope
+        GROUP BY report_no
+        ) x
+        ON t.report_no = x.report_no
+        AND t.sort_ord = x.min_sort_ord
+        ) ws
+        ON ws.report_no = p.report_no
+
+        <!-- 작업 전 대표사진 -->
+        LEFT JOIN (
+        SELECT
+        p1.report_no,
+        p1.img_path,
+        p1.img_name
+        FROM pothole_photo p1
+        INNER JOIN (
+        SELECT
+        report_no,
+        COALESCE(
+        MIN(CASE WHEN is_main = 'Y' THEN sort_ord END),
+        MIN(sort_ord)
+        ) AS pick_sort_ord
+        FROM pothole_photo
+        WHERE photo_gb = 'BEFORE'
+        GROUP BY report_no
+        ) x
+        ON p1.report_no = x.report_no
+        AND p1.sort_ord = x.pick_sort_ord
+        WHERE p1.photo_gb = 'BEFORE'
+        ) bf
+        ON bf.report_no = p.report_no
+
+        <!-- 작업 후 대표사진 -->
+        LEFT JOIN (
+        SELECT
+        p1.report_no,
+        p1.img_path,
+        p1.img_name
+        FROM pothole_photo p1
+        INNER JOIN (
+        SELECT
+        report_no,
+        COALESCE(
+        MIN(CASE WHEN is_main = 'Y' THEN sort_ord END),
+        MIN(sort_ord)
+        ) AS pick_sort_ord
+        FROM pothole_photo
+        WHERE photo_gb = 'AFTER'
+        GROUP BY report_no
+        ) x
+        ON p1.report_no = x.report_no
+        AND p1.sort_ord = x.pick_sort_ord
+        WHERE p1.photo_gb = 'AFTER'
+        ) af
+        ON af.report_no = p.report_no
+
+        WHERE p.del_yn = 'N'
+        AND p.report_no IN
+        <foreach collection="list" item="reportNo" open="(" separator="," close=")">
+            #{reportNo}
+        </foreach>
+
+        ORDER BY
+        DATE_FORMAT(p.report_date, '%m') ASC,
+        p.report_date ASC,
+        p.report_no ASC
+    </select>
+
+
+</mapper>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yido.road.sos.repository.main.UserMapper">
+
+    <select id="selectAdminUser" resultType="AdminUser">
+        /* UserMapper.selectAdminUser - 로그인 사용자 조회 */
+        SELECT
+            A.USER_ID,
+            A.USER_NM,
+            A.USER_PWD,
+            A.USER_AUTH,
+            CAST(AES_DECRYPT(UNHEX(A.USER_MAIL), 'RSOS') AS CHAR) AS USER_MAIL,
+            CAST(AES_DECRYPT(UNHEX(A.USER_TEL),  'RSOS') AS CHAR) AS USER_TEL,
+            A.DEPT_CD,
+            C.CD_CODE_NM AS DEPT_NM,
+            A.BIZ_DIV_CD,
+            B.CD_CODE_NM AS USER_AUTH_NM,
+            GROUP_CONCAT(AUS.site_cd ORDER BY AUS.site_cd SEPARATOR ',') AS SITE_CD_LIST
+        FROM ADMIN_USER A
+                 LEFT JOIN admin_user_site AUS ON AUS.user_id = A.USER_ID
+                 LEFT JOIN CD_COMMON B ON B.CD_CODE = A.USER_AUTH AND B.cd_div = '003' AND B.USE_YN = 'Y'
+                 LEFT JOIN CD_COMMON C ON C.CD_CODE = A.DEPT_CD AND C.cd_div = 'DEPT' AND C.USE_YN = 'Y'
+        WHERE A.USER_ID = #{userId}
+        GROUP BY
+            A.USER_ID,
+            A.USER_NM,
+            A.USER_PWD,
+            A.USER_AUTH,
+            B.CD_CODE_NM,
+            C.CD_CODE_NM
+    </select>
+
+    <select id="selectUserInfo" resultType="UserInfo">
+        SELECT A.USER_ID
+             , A.USER_NM
+             , A.USER_PWD
+             , A.USER_MAIL
+             , A.USER_AUTH
+             , A.USE_YN
+          FROM admin_user A
+         WHERE A.USE_YN = 1
+           AND A.USER_ID = #{userId}
+    </select>
+    
+    <select id="selectUserList" resultType="UserInfo">
+        SELECT A.USER_ID
+             , A.USER_NM
+             , A.USER_PWD
+             , A.USER_MAIL
+             , A.USE_YN
+          FROM admin_user A
+         WHERE 1 = 1
+         <if test="useYn != null">
+           AND A.USE_YN = #{useYn}
+         </if>
+         <if test="userId != null">
+           AND A.USER_ID = #{userId}
+         </if>
+    </select>
+    
+    <insert id="insertUserInfo">
+        INSERT INTO admin_user(
+              USER_ID
+            , USER_NM
+            , USER_PWD
+            , USER_MAIL
+            , USE_YN
+            , REG_DT
+            , REG_ID
+        ) VALUES (
+              #{userId}
+            , #{userNm}
+            , #{userPwd}
+            , #{userMail}
+            , 1
+            , CURRENT_TIMESTAMP
+            , #{regId}
+        )  
+    </insert>
+    
+    <update id="updateUserInfo">
+        UPDATE admin_user
+           SET USER_NM  = #{userNm}
+           <if test='userPwd != null'>
+             , USER_PWD = #{userPwd}
+           </if>
+             , USER_MAIL= #{userMail}
+             , USE_YN   = #{useYn}
+             , UPD_DT   = CURRENT_TIMESTAMP
+             , UPD_ID   = #{updId}
+         WHERE USER_ID  = #{userId}
+    </update>
+
+    <update id="updateMyPage" parameterType="map">
+        UPDATE admin_user
+        <set>
+            <if test="userNm != null and userNm != ''">
+                USER_NM = #{userNm},
+            </if>
+
+            <if test="password != null and password != ''">
+                USER_PWD = #{password},
+            </if>
+
+            <if test="tel != null and tel != ''">
+                USER_TEL = HEX(AES_ENCRYPT(#{tel}, 'RSOS')),
+            </if>
+
+            <if test="email != null and email != ''">
+                USER_MAIL = HEX(AES_ENCRYPT(#{email}, 'RSOS')),
+            </if>
+
+            UPD_DT = NOW(),
+            UPD_ID = #{updId}
+        </set>
+        WHERE USER_ID = #{userId}
+    </update>
+    <select id="selectUserPwd" resultType="string">
+        SELECT USER_PWD
+        FROM admin_user
+        WHERE USER_ID = #{userId}
+          AND USE_YN = 1
+    </select>
+
+</mapper>

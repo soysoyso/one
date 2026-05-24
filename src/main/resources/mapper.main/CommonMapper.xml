@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yido.road.sos.repository.main.CommonMapper">
+
+	<select id="getCommonCode" resultType="CdCommon">
+		SELECT CD_DIV
+			 , CD_DIV_NM
+			 , CD_CODE
+			 , CD_CODE_NM
+		  FROM cd_common
+		 WHERE USE_YN = 'Y'
+		<if test='cdDiv != null and cdDiv != ""'>
+		  AND CD_DIV = #{cdDiv}
+		</if>
+		<if test='cdCode != null and cdCode != ""'>
+			AND CD_CODE = #{cdCode}
+		</if>
+	</select>
+	
+	<select id="getCommonCodeList" resultType="CdCommon">
+		SELECT CD_DIV
+			, CD_DIV_NM
+			, CD_CODE
+			, CD_CODE_NM
+			, CD_VALUE_1
+		  FROM cd_common
+		 WHERE USE_YN = 'Y'
+		<if test='cdDiv != null and cdDiv != ""'>
+			AND CD_DIV = #{cdDiv}
+		</if>
+		ORDER BY CD_SORT
+	</select>
+
+    <select id="selectCommonList" parameterType="map" resultType="CdCommon">
+        SELECT *
+        FROM CD_COMMON
+        WHERE USE_YN = 'Y'
+        AND CD_DIV = #{cdDiv}
+        <if test="excludeAuth != null and excludeAuth != ''">
+            AND CD_CODE != #{excludeAuth}
+        </if>
+        ORDER BY CD_CODE
+    </select>
+
+	<select id="selectRoadDirList" parameterType="hashmap" resultType="CdCommon">
+		SELECT
+			CD_DIV,
+			CD_DIV_NM,
+			CD_CODE,
+			CD_CODE_NM,
+			CD_VALUE_1,
+			CD_SORT,
+			USE_YN
+		FROM cd_common
+		WHERE CD_DIV = #{cdDiv}
+		  AND CD_VALUE_1 = #{siteCd}
+		  AND USE_YN = 'Y'
+		ORDER BY CD_SORT ASC
+	</select>
+</mapper>

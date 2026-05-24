@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yido.road.sos.repository.main.PotholeImageMapper">
+
+    <insert id="insertPotholeImage" parameterType="PotholeImage">
+        /* PotholeImageMapper.insertPotholeImage - 포트홀 이미지 insert */
+        INSERT INTO pothole_photo
+        (
+            report_no,
+            photo_gb,
+            img_path,
+            img_name,
+            sort_ord,
+            is_main
+        )
+        VALUES
+            (
+                #{reportNo},
+                #{photoGb},
+                #{imgPath},
+                #{imgName},
+                #{sortOrd},
+                #{isMain}
+            )
+    </insert>
+
+    <select id="selectPotholeImagesByReportNo" resultType="PotholeImage">
+        SELECT
+            img_path AS imgPath,
+            img_name AS imgName,
+            sort_ord AS sortOrd,
+            photo_gb AS photoGb,
+            is_main AS isMain
+        FROM pothole_photo
+        WHERE report_no = #{reportNo}
+          AND photo_gb  = #{photoGb}
+        ORDER BY sort_ord ASC
+    </select>
+
+    <select id="selectPotholeImageOne" resultType="PotholeImage">
+        SELECT
+            img_path AS imgPath,
+            img_name AS imgName,
+            sort_ord AS sortOrd,
+            photo_gb AS photoGb,
+            is_main AS isMain
+        FROM pothole_photo
+        WHERE report_no = #{reportNo}
+          AND photo_gb = #{photoGb}
+          AND sort_ord = #{sortOrd}
+    </select>
+    <!-- 남아있는 sort_ord 목록 조회 (빈 슬롯 계산용) -->
+    <select id="selectUsedSortOrds"
+            resultType="int">
+        SELECT sort_ord
+        FROM pothole_photo
+        WHERE report_no = #{reportNo}
+          AND photo_gb  = #{photoGb}
+        ORDER BY sort_ord ASC
+    </select>
+
+    <!-- 특정 슬롯 삭제 (기존 사진 삭제용) -->
+    <delete id="deletePotholePhotoOne">
+        DELETE FROM pothole_photo
+        WHERE report_no = #{reportNo}
+          AND photo_gb  = #{photoGb}
+          AND sort_ord  = #{sortOrd}
+    </delete>
+
+    <!-- 슬롯 upsert (빈 슬롯 채우기 / 동일 슬롯이면 업데이트) -->
+    <insert id="upsertPotholePhoto">
+        INSERT INTO pothole_photo
+            (report_no, photo_gb, img_path, img_name, sort_ord, is_main)
+        VALUES
+            (#{reportNo}, #{photoGb}, #{imgPath}, #{imgName}, #{sortOrd}, #{isMain})
+            ON DUPLICATE KEY UPDATE
+                                 img_path = VALUES(img_path),
+                                 img_name = VALUES(img_name),
+                                 is_main  = VALUES(is_main)
+    </insert>
+
+    <update id="updateIsMainAllN">
+        UPDATE pothole_photo
+        SET is_main = 'N'
+        WHERE report_no = #{reportNo}
+          AND photo_gb = #{photoGb}
+    </update>
+
+    <update id="updateIsMainOneY">
+        UPDATE pothole_photo
+        SET is_main = 'Y'
+        WHERE report_no = #{reportNo}
+          AND photo_gb  = #{photoGb}
+          AND sort_ord  = #{sortOrd}
+    </update>
+
+    <!-- 1차: 기존 sort_ord를 임시번호로 변경해서 UNIQUE 충돌 방지 -->
+    <update id="movePhotoToTempSortOrd">
+        UPDATE pothole_photo
+        SET sort_ord = #{tempSortOrd}
+        WHERE report_no = #{reportNo}
+          AND photo_gb  = #{fromPhotoGb}
+          AND sort_ord  = #{fromSortOrd}
+    </update>
+
+    <!-- 2차: 최종 작업전/작업후 + sort_ord 반영 -->
+    <update id="movePhotoToFinalGbAndSortOrd">
+        UPDATE pothole_photo
+        SET photo_gb = #{toPhotoGb},
+            sort_ord = #{toSortOrd}
+        WHERE report_no = #{reportNo}
+          AND photo_gb  = #{fromPhotoGb}
+          AND sort_ord  = #{tempSortOrd}
+    </update>
+
+    <update id="updateImagePathAndName" parameterType="PotholeImage">
+        UPDATE pothole_photo
+        SET img_path = #{imgPath},
+            img_name = #{imgName}
+        WHERE report_no = #{reportNo}
+          AND photo_gb = #{photoGb}
+          AND sort_ord = #{sortOrd}
+    </update>
+</mapper>

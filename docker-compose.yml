@@ -1,0 +1,48 @@
+services:
+  road-sos-mysql:
+    image: mysql:8.0
+    container_name: road-sos-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: road_sos
+      MYSQL_USER: roadsos
+      MYSQL_PASSWORD: roadsos
+      TZ: Asia/Seoul
+    ports:
+      - "33120:3306"
+    volumes:
+      - road-sos-mysql-data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+09:00
+      - --lower-case-table-names=1
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  road-sos:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: road-sos
+    depends_on:
+      road-sos-mysql:
+        condition: service_healthy
+    ports:
+      - "8703:8703"
+    volumes:
+      - ./docker-data/uploads:/usr/local/webTempFiles/road-sos
+    command:
+      - --spring.profiles.active=local
+      - --server.port=8703
+      - --server.host.name=http://localhost:8703
+      - --Globals.File.UploadPath=/usr/local/webTempFiles/road-sos/
+    restart: unless-stopped
+
+volumes:
+  road-sos-mysql-data:

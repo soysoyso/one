@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yido.road.sos.repository.main.WeatherCacheMapper">
+
+    <insert id="upsertSuccess" parameterType="map">
+        INSERT INTO weather_vilage_cache
+        (
+        nx, ny, lat, lng,
+        base_date, base_time,
+        pty, sky, tmp, weather_cd, weather_text,
+        fetched_at,
+        fail_cnt, last_fail_at, last_err_msg
+        )
+        VALUES
+        (
+        #{nx}, #{ny}, #{lat}, #{lng},
+        #{baseDate}, #{baseTime},
+        #{pty}, #{sky}, #{tmp}, #{weatherCd}, #{weatherText},
+        NOW(3),
+        0, NULL, NULL
+        )
+        ON DUPLICATE KEY UPDATE
+        lat          = VALUES(lat),
+        lng          = VALUES(lng),
+        base_date    = VALUES(base_date),
+        base_time    = VALUES(base_time),
+        pty          = VALUES(pty),
+        sky          = VALUES(sky),
+        tmp          = VALUES(tmp),
+        weather_cd   = VALUES(weather_cd),
+        weather_text = VALUES(weather_text),
+        fetched_at   = NOW(3),
+        fail_cnt     = 0,
+        last_fail_at = NULL,
+        last_err_msg = NULL
+    </insert>
+
+    <!-- ✅ 실패 누적 -->
+    <update id="updateFail">
+        UPDATE weather_vilage_cache
+        SET
+            fail_cnt     = fail_cnt + 1,
+            last_fail_at = NOW(3),
+            last_err_msg = #{errMsg}
+        WHERE nx = #{nx}
+          AND ny = #{ny}
+    </update>
+
+    <!-- ✅ 캐시 조회 -->
+    <select id="selectWeatherWithFetchedAt" resultType="map">
+        SELECT
+            pty,
+            sky,
+            weather_cd,
+            fetched_at,
+            tmp
+        FROM weather_vilage_cache
+        WHERE nx = #{nx}
+          AND ny = #{ny}
+    </select>
+
+    <!-- ✅ 쿨다운 체크 -->
+    <select id="canRequestNow" resultType="int">
+        SELECT
+            CASE
+                WHEN COUNT(*) = 0 THEN 1
+                WHEN MAX(last_request_at) IS NULL THEN 1
+                WHEN MAX(last_request_at) &lt;= DATE_SUB(NOW(3), INTERVAL #{cooldownMinutes} MINUTE) THEN 1
+                ELSE 0
+                END AS ok
+        FROM weather_vilage_cache
+        WHERE nx = #{nx}
+          AND ny = #{ny}
+    </select>
+
+    <!-- ✅ last_request_at 찍기용 (summary 제거 버전) -->
+    <update id="touchLastRequest">
+        INSERT INTO weather_vilage_cache
+        (
+            nx, ny,
+            base_date, base_time,
+            pty, sky, weather_cd,
+            fetched_at, fail_cnt,
+            last_request_at
+        )
+        VALUES
+            (
+                #{nx}, #{ny},
+                '', '',
+                NULL, NULL, 'W999',
+                NOW(3), 0,
+                NOW(3)
+            )
+            ON DUPLICATE KEY UPDATE
+                                 last_request_at = NOW(3)
+    </update>
+
+</mapper>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yido.road.sos.repository.main.SmsLogMapper">
+
+	<insert id="insertLog" parameterType="SmsSendLog">
+		/* SmsLogMapper.insertLog - 사고접수 URL 전송 로그 기록 */
+		INSERT INTO road_sos.sos_sms_send_log
+		(
+		requested_at,
+		admin_id, admin_ip, site_cd,
+		receive_mobile_no, send_title, send_message
+		)
+		VALUES
+		(
+		NOW(),
+		#{adminId}, #{adminIp}, #{siteCd},
+		#{receiveMobileNo}, #{sendTitle}, #{sendMessage}
+		)
+	</insert>
+
+</mapper>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yido.road.sos.repository.main.PotholeDraftMapper">
+
+    <insert id="insertDraft" parameterType="PotholeDraftDto"
+            useGeneratedKeys="true" keyProperty="draftId">
+        /* PotholeDraftMapper.insertDraft - 임시 저장 데이터 저장 */
+        INSERT INTO pothole_draft
+        (
+        status_cd,
+        report_date,
+        site_cd,
+        receipt_gb_cd,
+        <if test="adminSiteCd != null">
+            admin_site_cd,
+        </if>
+        direction_cd,
+        lat, lng, accuracy_m, captured_at, captured_ts,
+        addr, detail_info, delivery_note,
+        writer_id,
+        created_at, updated_at,
+        weather_cd,
+        temp,
+        sta_meters, sta_km_decimal, sta_text
+        )
+        VALUES
+        (
+        'DRAFT',
+        #{reportDateTime},
+        #{siteCd},
+        #{receiptGbCd},
+        <if test="adminSiteCd != null">
+            #{adminSiteCd},
+        </if>
+        #{directionCd},
+        #{lat}, #{lng}, #{accuracyM},
+        <choose>
+            <when test="capturedAt != null">
+                #{capturedAt}
+            </when>
+            <otherwise>
+                NULL
+            </otherwise>
+        </choose>,
+        #{capturedTs},
+        #{addr}, #{detailInfo}, #{deliveryNote},
+        #{writerId},
+        NOW(3), NOW(3),
+        #{weatherCd},
+        <choose>
+            <when test="temp != null">#{temp}</when>
+            <otherwise>NULL</otherwise>
+        </choose>,
+        <choose>
+            <when test="staMeters != null">#{staMeters}</when>
+            <otherwise>NULL</otherwise>
+        </choose>,
+        <choose>
+            <when test="staKmDecimal != null">#{staKmDecimal}</when>
+            <otherwise>NULL</otherwise>
+        </choose>,
+        <choose>
+            <when test="staText != null and staText != ''">#{staText}</when>
+            <otherwise>NULL</otherwise>
+        </choose>
+        )
+    </insert>
+
+    <select id="selectDraftById" resultType="PotholeDraftDto">
+        /* PotholeDraftMapper.selectDraftById - 임시 저장 데이터 조회 */
+        SELECT
+            draft_id     AS draftId,
+            status_cd    AS statusCd,
+            report_date  AS reportDateTime,
+            site_cd      AS siteCd,
+            admin_site_cd  AS adminsiteCd,
+            direction_cd AS directionCd,
+            lat, lng,
+            accuracy_m   AS accuracyM,
+            captured_at  AS capturedAt,
+            captured_ts  AS capturedTs,
+            addr,
+            detail_info  AS detailInfo,
+            delivery_note AS deliveryNote,
+            writer_id    AS writerId,
+            weather_cd AS weatherCd,
+            temp           AS temp,
+            sta_meters   AS staMeters,
+            sta_km_decimal AS staKmDecimal,
+            sta_text     AS staText,
+            receipt_gb_cd AS receiptGbCd
+        FROM pothole_draft
+        WHERE draft_id = #{draftId}
+    </select>
+
+
+    <delete id="deleteDraft">
+        /* PotholeDraftMapper.deleteDraft - 임시 저장 데이터 삭제 */
+        DELETE FROM pothole_draft
+        WHERE draft_id = #{draftId}
+    </delete>
+</mapper>

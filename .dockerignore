@@ -1,0 +1,6 @@
+.gradle
+.idea
+.sts4-cache
+build
+docker-data
+*.log

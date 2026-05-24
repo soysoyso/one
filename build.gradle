@@ -1,0 +1,63 @@
+plugins {
+	id 'java'
+	id 'war'
+	id 'org.springframework.boot' version '2.7.18'
+	id 'io.spring.dependency-management' version '1.1.6'
+}
+
+group = 'ROOT'
+sourceCompatibility = JavaVersion.VERSION_1_8
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+}
+
+tasks.withType(ProcessResources).configureEach {
+	filteringCharset = 'UTF-8'
+}
+
+repositories { mavenCentral() }
+dependencies {
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.3.2'
+
+	implementation 'com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10'
+	implementation 'com.openhtmltopdf:openhtmltopdf-slf4j:1.0.10'
+
+	implementation 'mysql:mysql-connector-java:8.0.33'
+    implementation 'org.jsoup:jsoup:1.17.2'
+	compileOnly 'org.projectlombok:lombok:1.18.4'
+	annotationProcessor 'org.projectlombok:lombok:1.18.4'
+
+	implementation 'javax.servlet:jstl'
+	implementation 'org.apache.tomcat.embed:tomcat-embed-jasper'
+	providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+	implementation 'org.springframework.security:spring-security-taglibs'
+
+	implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
+	implementation 'com.google.code.gson:gson:2.8.2'
+	implementation 'org.apache.commons:commons-email:1.5'
+	implementation 'commons-io:commons-io:2.6'
+	implementation 'com.lowagie:itext:2.1.7'
+	implementation 'net.sf.jasperreports:jasperreports:6.12.2'
+	implementation 'net.sf.jasperreports:jasperreports-functions:6.12.2'
+	implementation 'org.apache.poi:poi-ooxml:4.0.0'
+	implementation 'org.apache.poi:poi:4.0.0'
+
+	// NCP Object Storage (S3-compatible) client — AWS SDK v2 사용
+	implementation platform("software.amazon.awssdk:bom:2.25.+") // 최신 2.x BOM
+	implementation "software.amazon.awssdk:s3"
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.json:json:20230227'
+	implementation "com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10"
+	implementation "com.openhtmltopdf:openhtmltopdf-slf4j:1.0.10"
+    implementation 'com.drewnoakes:metadata-extractor:2.19.0'
+
+}
+
+war { enabled = true }

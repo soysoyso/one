@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yido.road.sos.repository.main.PotholeMapper">
+
+    <select id="selectMaxReportNoByDate" parameterType="map" resultType="string">
+        /* PotholeMapper.selectNextReportSeq - 접수번호 추출 */
+        SELECT MAX(report_no)
+        FROM pothole
+        WHERE report_no LIKE CONCAT(#{prefix}, #{today}, '%')
+    </select>
+
+    <select id="selectNextDocNo" parameterType="string" resultType="string">
+        /* PotholeMapper.selectNextDocNo - 문서번호 추출 */
+        SELECT CONCAT(
+                       DATE_FORMAT(NOW(), '%Y'),
+                       '-',
+                       #{docGb},
+                       '-',
+                       LPAD(
+                               IFNULL(
+                                       MAX(CAST(SUBSTRING(doc_no, 8, 3) AS UNSIGNED)),
+                                       0
+                               ) + 1,
+                               3,
+                               '0'
+                       )
+               ) AS next_doc_no
+        FROM pothole
+        WHERE doc_no LIKE CONCAT(DATE_FORMAT(NOW(), '%Y'), '-', #{docGb}, '-%')
+    </select>
+
+    <insert id="insertPothole" parameterType="Pothole">
+        /* 접수하기 */
+        INSERT INTO pothole
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            report_no,
+            doc_no,
+            report_date,
+            status_cd,
+            <if test="siteCd != null">site_cd,</if>
+            <if test="adminSiteCd != null">admin_site_cd,</if>
+            <if test="lat != null">lat,</if>
+            <if test="lng != null">lng,</if>
+            <if test="accuracyM != null">accuracy_m,</if>
+            <if test="capturedAt != null">captured_at,</if>
+            <if test="capturedTs != null">captured_ts,</if>
+            <if test="addr != null and addr != ''">addr,</if>
+            <if test="cellPhone != null and cellPhone != ''">cell_phone,</if>
+            <if test="detailInfo != null">detail_info,</if>
+            <if test="deliveryNote != null">delivery_note,</if>
+            <if test="receiverId != null">receiver_id,</if>
+            <if test="regIp != null and regIp != ''">reg_ip,</if>
+            <if test="processNote != null">process_note,</if>
+            <if test="managerId != null">manager_id,</if>
+            <if test="directionCd != null">direction_cd,</if>
+            <if test="weatherCd != null">weather_cd,</if>
+            <if test="temp != null">temp,</if>
+            <if test="staMeters != null">sta_meters,</if>
+            <if test="staKmDecimal != null">sta_km_decimal,</if>
+            <if test="staText != null and staText != ''">sta_text,</if>
+            <if test="receiptGbCd != null and receiptGbCd != ''">receipt_gb_cd,</if>
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            #{reportNo},
+            #{docNo},
+            #{reportDate},
+            #{statusCd},
+            <if test="siteCd != null">#{siteCd},</if>
+            <if test="adminSiteCd != null">#{adminSiteCd},</if>
+            <if test="lat != null">#{lat},</if>
+            <if test="lng != null">#{lng},</if>
+            <if test="accuracyM != null">#{accuracyM},</if>
+            <if test="capturedAt != null">#{capturedAt,jdbcType=TIMESTAMP},</if>
+            <if test="capturedTs != null">#{capturedTs},</if>
+            <if test="addr != null and addr != ''">#{addr},</if>
+            <if test="cellPhone != null and cellPhone != ''">
+                HEX(AES_ENCRYPT(#{cellPhone}, 'RSOS')),
+            </if>
+            <if test="detailInfo != null">#{detailInfo},</if>
+            <if test="deliveryNote != null">#{deliveryNote},</if>
+            <if test="receiverId != null">#{receiverId},</if>
+            <if test="regIp != null and regIp != ''">#{regIp},</if>
+            <if test="processNote != null">#{processNote},</if>
+            <if test="managerId != null">#{managerId},</if>
+            <if test="directionCd != null">#{directionCd},</if>
+            <if test="weatherCd != null">#{weatherCd},</if>
+            <if test="temp != null">#{temp},</if>
+            <if test="staMeters != null">#{staMeters},</if>
+            <if test="staKmDecimal != null">#{staKmDecimal},</if>
+            <if test="staText != null and staText != ''">#{staText},</if>
+            <if test="receiptGbCd != null and receiptGbCd != ''">#{receiptGbCd},</if>
+        </trim>
+    </insert>
+
+    <select id="selectNextReportNo" resultType="string">
+        SELECT
+            CONCAT(
+                    'I',
+                    DATE_FORMAT(NOW(), '%y%m%d'),
+                    LPAD(
+                            IFNULL(
+                                    MAX(CAST(SUBSTRING(report_no, 8, 3) AS UNSIGNED)),
+                                    0
+                            ) + 1,
+                            3,
+                            '0'
+                    )
+            ) AS next_no
+        FROM pothole
+        WHERE report_no LIKE CONCAT('I', DATE_FORMAT(NOW(), '%y%m%d'), '%')
+    </select>
+
+    <select id="selectPotholeByReportNo" parameterType="string" resultType="Pothole">
+        /* 작업내용 조회 */
+        SELECT
+            si.site_name AS siteName
+             , p.report_no AS reportNo
+             , p.receiver_id AS receiverId
+             , p.report_date AS reportDate
+             , p.direction_cd AS directionCd
+             , c2.CD_CODE_NM AS directionNm
+             , p.addr AS addr
+             , p.detail_info AS detailInfo
+             , p.delivery_note AS deliveryNote
+             , p.manager_id AS managerId
+             , p.work_start_at AS workStartAt
+             , p.work_end_at AS workEndAt
+             , DATE_FORMAT(p.work_end_at, '%Y-%m-%d %H:%i') AS workEndDateTimeFmt
+             , p.process_note AS processNote
+             , p.status_cd AS statusCd
+             , p.site_cd AS siteCd
+             , p.admin_site_cd AS adminSiteCd
+             , p.sta_meters AS staMeters
+             , p.sta_km_decimal AS staKmDecimal
+             , FORMAT(p.sta_km_decimal, 3) AS staKmDecimalText
+             , p.sta_text AS staText
+             , au.USER_NM AS userNm
+             , au.USER_NM AS managerNm
+             , p.receipt_gb_cd AS receiptGbCd
+             , c.CD_CODE_NM AS receiptGbNm
+        FROM pothole p
+            LEFT JOIN  site_info si ON p.site_cd = si.site_cd and si.del_yn = 'N'
+            LEFT JOIN  admin_user au ON p.receiver_id = au.USER_ID and au.USE_YN = 1
+            LEFT JOIN cd_common c ON p.receipt_gb_cd = c.CD_CODE and c.CD_DIV = '006' and c.USE_YN = 'Y'
+            LEFT JOIN cd_common c2 ON p.direction_cd = c2.CD_CODE and c2.CD_DIV = 'ROAD_DIR' and c2.USE_YN = 'Y'
+        WHERE report_no = #{reportNo}
+          AND p.del_yn = 'N'
+    </select>
+
+    <update id="updatePotholeText" parameterType="map">
+        /* 접수내용수정 */
+        UPDATE pothole
+        <set>
+            <if test="receiverId != null">
+                receiver_id = #{receiverId},
+            </if>
+            <if test="updateId != null and updateId != ''">
+                update_id = #{updateId},
+            </if>
+            <if test="reportDate != null">
+                report_date = #{reportDate},
+            </if>
+            <if test="receiptGbCd != null and receiptGbCd != ''">
+                receipt_gb_cd = #{receiptGbCd},
+            </if>
+            <if test="directionCd != null and directionCd != ''">
+                direction_cd = #{directionCd},
+            </if>
+            <if test="processNote != null">
+                process_note = #{processNote},
+            </if>
+
+            <if test="detailInfo != null">
+                detail_info = #{detailInfo},
+            </if>
+
+            <if test="deliveryNote != null">
+                delivery_note = #{deliveryNote},
+            </if>
+
+            <if test="lat != null and lat != ''">
+                lat = #{lat},
+            </if>
+            <if test="lng != null and lng != ''">
+                lng = #{lng},
+            </if>
+            <if test="accuracyM != null and accuracyM != ''">
+                accuracy_m = #{accuracyM},
+            </if>
+
+            <if test="capturedAt != null and capturedAt != ''">
+                captured_at = #{capturedAt},
+            </if>
+            <if test="capturedTs != null and capturedTs != ''">
+                captured_ts = #{capturedTs},
+            </if>
+
+            <if test="addr != null">
+                addr = #{addr},
+            </if>
+
+            <if test="weatherCd != null and weatherCd != ''">
+                weather_cd = #{weatherCd},
+            </if>
+            <if test="staMeters != null">
+                sta_meters = #{staMeters},
+            </if>
+
+            <if test="staKmDecimal != null">
+                sta_km_decimal = #{staKmDecimal},
+            </if>
+
+            <if test="staText != null and staText != ''">
+                sta_text = #{staText},
+            </if>
+
+            <if test="updateIp != null and updateIp != ''">
+                update_ip = #{updateIp},
+            </if>
+
+            update_datetime = NOW()
+        </set>
+        WHERE report_no = #{reportNo}
+    </update>
+
+
+    <update id="updatePotholeWork" parameterType="map">
+        /* 작업하기 */
+        UPDATE pothole
+        <set>
+            <if test="managerId != null and managerId != ''">
+                manager_id = #{managerId},
+            </if>
+            <if test="updateId != null and updateId != ''">
+                update_id = #{updateId},
+            </if>
+            <if test="workStartAt != null">
+                work_start_at = #{workStartAt},
+            </if>
+
+            <!-- 완료(DONE)로 전환 시 완료일시 세팅 -->
+            <if test="statusCd != null and statusCd == 'DONE'">
+                work_end_at = IFNULL(work_end_at, NOW()),
+            </if>
+
+            <if test="processNote != null">
+                process_note = #{processNote},
+            </if>
+
+            <if test="statusCd != null and statusCd != ''">
+                status_cd = #{statusCd},
+            </if>
+            <if test="workWeatherCd != null and workWeatherCd != ''">
+                work_weather_cd = #{workWeatherCd},
+            </if>
+            <if test="workTempC != null and workTempC != ''">
+                work_temp = #{workTempC},
+            </if>
+
+            update_datetime = NOW()
+
+            <if test="updateIp != null and updateIp != ''">
+                , update_ip = #{updateIp}
+            </if>
+        </set>
+        WHERE report_no = #{reportNo}
+    </update>
+
+    <select id="selectTodayStatusCounts" resultType="map">
+<![CDATA[
+        SELECT
+            COUNT(*) AS today_total_cnt,
+            COUNT(CASE WHEN p.status_cd = 'RECEIVED' THEN 1 END) AS today_received_cnt,
+            COUNT(CASE WHEN p.status_cd = 'WORKING'  THEN 1 END) AS today_processing_cnt
+        FROM pothole p
+        WHERE p.report_date >= CURDATE()
+          AND p.report_date < DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+          AND del_yn = 'N'
+          AND (
+            p.site_cd IS NULL
+                OR EXISTS (
+                SELECT 1
+                FROM site_info child
+                         JOIN admin_user_site aus
+                              ON aus.site_cd = COALESCE(child.parent_site_cd, child.site_cd)
+                WHERE child.site_cd = p.site_cd
+                  AND child.del_yn = 'N'
+                  AND aus.user_id = #{userId}
+            )
+            )
+        ]]>
+</select>
+
+    <select id="selectRecentPotholeList" parameterType="map" resultType="map">
+        SELECT
+        p.report_no AS reportNo,
+        DATE_FORMAT(p.report_date, '%Y-%m-%d %H:%i:%s') AS reportDate,
+        DATE_FORMAT(p.work_start_at, '%Y-%m-%d %H:%i:%s') AS workStartAt,
+        DATE_FORMAT(p.work_end_at, '%Y-%m-%d %H:%i:%s') AS workEndAt,
+        p.status_cd AS statusCd,
+        p.site_cd AS siteCd,
+        si.site_name AS siteName,
+        p.direction_cd AS directionCd,
+        dir.CD_CODE_NM AS directionCdNm,
+        p.addr AS addr,
+        au.USER_NM AS userName,
+        p.sta_text AS staText,
+        pp.sort_ord AS thumbSortOrd,
+        IFNULL(
+        CONCAT('/pothole/img/before/', p.report_no, '/', pp.sort_ord),
+        '/assets/img/no-image.png'
+        ) AS thumbUrl
+
+        , p.receipt_gb_cd AS receiptGbCd
+        , c.CD_CODE_NM AS receiptGbNm
+        FROM pothole p
+        LEFT JOIN site_info si ON si.site_cd = p.site_cd AND si.del_yn = 'N'
+        LEFT JOIN admin_user au ON p.receiver_id = au.USER_ID AND au.USE_YN = 1
+        LEFT JOIN pothole_photo pp ON pp.report_no = p.report_no AND pp.photo_gb = 'BEFORE' AND pp.is_main = 'Y'
+        LEFT JOIN cd_common dir ON dir.CD_DIV = 'ROAD_DIR' AND dir.CD_CODE = p.direction_cd AND dir.USE_YN = 'Y'
+        LEFT JOIN cd_common c ON p.receipt_gb_cd = c.CD_CODE and c.CD_DIV = '006' and c.USE_YN = 'Y'
+        WHERE 1 = 1
+        AND p.del_yn = 'N'
+        <if test="recentDays != null">
+            <![CDATA[
+        AND p.report_date >= DATE_SUB(CURDATE(), INTERVAL #{recentDays} - 1 DAY)
+        AND p.report_date < DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+        ]]>
+        </if>
+
+        <if test="statusCd != null and statusCd != ''">
+            AND p.status_cd = #{statusCd}
+        </if>
+        <if test="receiptTypeCd != null and receiptTypeCd != ''">
+            AND p.receipt_gb_cd = #{receiptTypeCd}
+        </if>
+
+        <if test="excludeStatus != null and excludeStatus != ''">
+            AND p.status_cd != #{excludeStatus}
+        </if>
+
+        <if test="srchStrtDt != null and srchStrtDt != ''">
+            <![CDATA[
+        AND p.report_date >= CONCAT(#{srchStrtDt}, ' 00:00:00')
+        ]]>
+        </if>
+
+        <if test="srchEndDt != null and srchEndDt != ''">
+            <![CDATA[
+        AND p.report_date < DATE_ADD(CONCAT(#{srchEndDt}, ' 00:00:00'), INTERVAL 1 DAY)
+        ]]>
+        </if>
+
+        <if test="keyword != null and keyword != ''">
+            <![CDATA[
+        AND (
+               au.USER_NM LIKE CONCAT('%', #{keyword}, '%')
+            OR p.process_note LIKE CONCAT('%', #{keyword}, '%')
+            OR p.detail_info LIKE CONCAT('%', #{keyword}, '%')
+            OR p.addr LIKE CONCAT('%', #{keyword}, '%')
+        )
+        ]]>
+        </if>
+
+        <![CDATA[
+    AND (
+           p.site_cd IS NULL
+        OR EXISTS (
+               SELECT 1
+               FROM road_sos.site_info child
+               JOIN road_sos.admin_user_site aus
+                 ON aus.site_cd = COALESCE(child.parent_site_cd, child.site_cd)
+              WHERE child.site_cd = p.site_cd
+                AND child.del_yn = 'N'
+                AND aus.user_id = #{userId}
+        )
+    )
+    ]]>
+
+        <choose>
+            <when test="order != null and order == 'oldest'">
+                ORDER BY p.report_date ASC, p.report_no ASC
+            </when>
+            <otherwise>
+                ORDER BY p.report_date DESC, p.report_no DESC
+            </otherwise>
+        </choose>
+
+        <if test="limit != null">
+            LIMIT #{limit}
+            <if test="offset != null">
+                OFFSET #{offset}
+            </if>
+        </if>
+    </select>
+
+    <select id="countTodayPotholeByUserSite" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+        FROM pothole p
+        LEFT JOIN admin_user au ON p.receiver_id = au.USER_ID AND au.USE_YN = 1
+
+        <where>
+            AND p.del_yn = 'N'
+            <if test="recentDays != null">
+                <![CDATA[
+                AND p.report_date >= DATE_SUB(CURDATE(), INTERVAL #{recentDays} - 1 DAY)
+                AND p.report_date < DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+                ]]>
+            </if>
+
+            <if test="statusCd != null and statusCd != ''">
+                AND p.status_cd = #{statusCd}
+            </if>
+            <if test="receiptTypeCd != null and receiptTypeCd != ''">
+                AND p.receipt_gb_cd = #{receiptTypeCd}
+            </if>
+
+            <if test="excludeStatus != null and excludeStatus != ''">
+                AND p.status_cd != #{excludeStatus}
+            </if>
+
+            <if test="srchStrtDt != null and srchStrtDt != ''">
+                <![CDATA[
+            AND p.report_date >= CONCAT(#{srchStrtDt}, ' 00:00:00')
+            ]]>
+            </if>
+
+            <if test="srchEndDt != null and srchEndDt != ''">
+                <![CDATA[
+            AND p.report_date < DATE_ADD(CONCAT(#{srchEndDt}, ' 00:00:00'), INTERVAL 1 DAY)
+            ]]>
+            </if>
+
+            <if test="keyword != null and keyword != ''">
+                <![CDATA[
+            AND (
+                   au.USER_NM LIKE CONCAT('%', #{keyword}, '%')
+                OR p.process_note LIKE CONCAT('%', #{keyword}, '%')
+                OR p.detail_info LIKE CONCAT('%', #{keyword}, '%')
+                OR p.addr LIKE CONCAT('%', #{keyword}, '%')
+            )
+            ]]>
+            </if>
+
+            <![CDATA[
+        AND (
+               p.site_cd IS NULL
+            OR EXISTS (
+                   SELECT 1
+                   FROM site_info child
+                   JOIN admin_user_site aus
+                     ON aus.site_cd = COALESCE(child.parent_site_cd, child.site_cd)
+                  WHERE child.site_cd = p.site_cd
+                    AND child.del_yn = 'N'
+                    AND aus.user_id = #{userId}
+            )
+        )
+        ]]>
+        </where>
+    </select>
+
+    <select id="selectWeatherBaseByReportNo" parameterType="string" resultType="map">
+        SELECT
+            COALESCE(snap_lat, lat) AS lat,
+            COALESCE(snap_lng, lng) AS lng,
+            addr
+        FROM pothole
+        WHERE report_no = #{value}
+          AND del_yn = 'N'
+    </select>
+
+    <insert id="insertPotholeHistory" parameterType="PotholeHistory">
+        INSERT INTO pothole_history
+        (
+            report_no,
+            action_type,
+            changed_fields,
+            before_data,
+            after_data,
+            action_user_id,
+            action_memo,
+            action_datetime
+        )
+        VALUES
+            (
+                #{reportNo},
+                #{actionType},
+                #{changedFields},
+                #{beforeData},
+                #{afterData},
+                #{actionUserId},
+                #{actionMemo},
+                NOW()
+            )
+    </insert>
+
+    <delete id="deletePotholePhotos">
+        DELETE FROM pothole_photo
+        WHERE report_no = #{reportNo}
+    </delete>
+
+    <update id="updatePotholeDeleteYn">
+        UPDATE pothole
+        SET del_yn = 'Y',
+            update_datetime = NOW(),
+            update_ip = #{updateIp},
+            update_id = #{userId}
+        WHERE report_no = #{reportNo}
+    </update>
+    <select id="selectReceiptGbCdByReportNo" parameterType="string" resultType="string">
+        SELECT receipt_gb_cd
+        FROM pothole
+        WHERE report_no = #{reportNo}
+    </select>
+
+    <select id="selectParentSiteCd" parameterType="map" resultType="string">
+        SELECT parent_site_cd
+        FROM site_info
+        WHERE site_cd = #{siteCd}
+          AND del_yn = 'N'
+    </select>
+
+
+</mapper>

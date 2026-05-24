@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="true">
+
+    <!-- 공통 Appenders -->
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d %5p [%c] %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="console-infolog" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d %5p %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 개발환경 -->
+    <springProfile name="develop">
+        <logger name="com.yido" level="DEBUG" additivity="false">
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc" level="OFF" additivity="false">
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.sqltiming" level="DEBUG" additivity="false">
+            <appender-ref ref="console-infolog"/>
+        </logger>
+
+        <logger name="jdbc.sqlonly" level="DEBUG" additivity="false">
+            <appender-ref ref="console-infolog"/>
+        </logger>
+
+        <logger name="jdbc.connection" level="OFF" additivity="false">
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.resultset" level="OFF" additivity="false">
+            <appender-ref ref="console-infolog"/>
+        </logger>
+
+        <logger name="jdbc.resultsettable" level="OFF" additivity="false">
+            <appender-ref ref="console-infolog"/>
+        </logger>
+
+        <root level="INFO">
+            <appender-ref ref="console"/>
+        </root>
+    </springProfile>
+
+    <!-- 운영환경 -->
+    <springProfile name="production">
+        <logger name="com.yido" level="DEBUG" additivity="false">
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc" level="OFF" additivity="false">
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.sqltiming" level="OFF" additivity="false">
+            <appender-ref ref="console-infolog"/>
+        </logger>
+
+        <logger name="jdbc.sqlonly" level="OFF" additivity="false">
+            <appender-ref ref="console-infolog"/>
+        </logger>
+
+        <logger name="jdbc.connection" level="OFF" additivity="false">
+            <appender-ref ref="console"/>
+        </logger>
+
+        <logger name="jdbc.resultset" level="OFF" additivity="false">
+            <appender-ref ref="console-infolog"/>
+        </logger>
+
+        <logger name="jdbc.resultsettable" level="OFF" additivity="false">
+            <appender-ref ref="console-infolog"/>
+        </logger>
+
+        <root level="INFO">
+            <appender-ref ref="console"/>
+        </root>
+    </springProfile>
+
+</configuration>

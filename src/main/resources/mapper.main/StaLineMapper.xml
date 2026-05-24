@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yido.road.sos.repository.main.StaLineMapper">
+
+    <select id="selectStaLine" parameterType="map" resultType="map">
+        /* StaLineMapper.selectStaLine - site_sta_line 단일행 조회 */
+        SELECT
+            site_cd       AS siteCd,
+            direction_cd  AS directionCd,
+            line_json     AS lineJson,
+            version       AS version,
+            sta_offset_km AS staOffsetKm
+        FROM site_sta_line
+        WHERE site_cd = #{siteCd}
+          AND direction_cd = #{directionCd}
+          AND use_yn = 'Y'
+            LIMIT 1
+    </select>
+
+    <select id="selectStaLinesByParent" parameterType="map" resultType="map">
+        /* StaLineMapper.selectStaLinesByParent - 대표 siteCd 기준 하위 노선 라인들 조회 */
+        SELECT
+            l.site_cd       AS siteCd,
+            l.direction_cd  AS directionCd,
+            l.seg_no        AS segNo,
+            l.line_json     AS lineJson,
+            l.version       AS version,
+            l.sta_offset_km AS staOffsetKm,
+            l.sta_base_km   AS staBaseKm,
+            s.site_name     AS siteName
+        FROM site_sta_line l
+                 JOIN site_info s ON s.site_cd = l.site_cd
+        WHERE l.use_yn = 'Y'
+          AND s.del_yn = 'N'
+          AND l.direction_cd = #{directionCd}
+          AND s.parent_site_cd = #{parentSiteCd}
+    </select>
+
+    <select id="selectStaLineSegs" parameterType="map" resultType="map">
+        SELECT
+            site_cd       AS siteCd,
+            direction_cd  AS directionCd,
+            seg_no        AS segNo,
+            line_json     AS lineJson,
+            version       AS version,
+            sta_base_km   AS staBaseKm,
+            sta_offset_km AS staOffsetKm
+        FROM site_sta_line
+        WHERE site_cd = #{siteCd}
+          AND direction_cd = #{directionCd}
+          AND use_yn = 'Y'
+        ORDER BY seg_no ASC
+    </select>
+
+    <select id="countSubRoutes" parameterType="map" resultType="int">
+        /* StaLineMapper.countSubRoutes - 대표 siteCd의 하위 노선 존재 여부 */
+        SELECT COUNT(*)
+        FROM site_info s
+        WHERE s.del_yn = 'N'
+          AND s.parent_site_cd = #{parentSiteCd}
+    </select>
+
+    <select id="selectLineJson" resultType="string">
+        SELECT line_json
+        FROM site_sta_line
+        WHERE site_cd = #{siteCd}
+          AND direction_cd = #{directionCd}
+          AND seg_no = #{segNo}
+          AND use_yn = 'Y'
+            LIMIT 1
+    </select>
+
+    <update id="updateLineJson">
+        UPDATE site_sta_line
+        SET line_json = #{lineJson}
+        <if test="startLng != null">, start_lng = #{startLng}</if>
+        <if test="startLat != null">, start_lat = #{startLat}</if>
+        , updated_at = CURRENT_TIMESTAMP
+        WHERE site_cd = #{siteCd}
+        AND direction_cd = #{directionCd}
+        AND seg_no = #{segNo}
+    </update>
+
+</mapper>
