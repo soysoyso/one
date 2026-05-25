@@ -17,6 +17,11 @@
 - 추가 범위: `daily_check_log`, `daily_check_log_item`, 로컬 테스트 계정 `field / field123`, 화면 `/manage/daily-checks/form`, 체크리스트 상세/저장 API.
 - 검증: 사용자 화면 HTTP 200, 필수 항목 누락 방어, 정상 저장 및 DB 저장 확인, 테스트 데이터 정리 완료.
 
+## 2026-05-25 관리자 일상점검 조회 업데이트
+- `feature/daily-check-admin-list` 브랜치에서 관리자 일상점검 목록/상세 조회 기능을 구현했다.
+- 추가 범위: 관리자 화면 `/admin/daily-checks`, 목록/상세 API, 관리자 상단 `일상점검` 메뉴.
+- 검증: 빌드 성공, 앱 재기동, 테스트 작성 데이터 생성, 목록/상세 조회 확인, 테스트 데이터 정리 완료.
+
 ## 기준
 
 - 기준 프레임워크: `C:\Users\YIDO\Desktop\YIDO250728\codex\ai-service-framework`

@@ -2,6 +2,99 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.yido.road.sos.repository.main.DailyCheckLogMapper">
+    <select id="selectDailyCheckLogList" resultType="DailyCheckLog">
+        SELECT
+            dcl.check_id,
+            dcl.check_no,
+            DATE_FORMAT(dcl.check_date, '%Y-%m-%d') AS check_date,
+            dcl.checklist_id,
+            dc.checklist_name,
+            dcl.site_cd,
+            si.site_name,
+            dcl.writer_id,
+            au.user_nm AS writer_nm,
+            dcl.status_cd,
+            dcl.weather_cd,
+            dcl.remark,
+            DATE_FORMAT(dcl.reg_dt, '%Y-%m-%d %H:%i') AS reg_dt,
+            DATE_FORMAT(dcl.upd_dt, '%Y-%m-%d %H:%i') AS upd_dt
+        FROM daily_check_log dcl
+            LEFT JOIN daily_checklist dc ON dc.checklist_id = dcl.checklist_id
+            LEFT JOIN site_info si ON si.site_cd = dcl.site_cd AND si.del_yn = 'N'
+            LEFT JOIN admin_user au ON au.user_id = dcl.writer_id AND au.use_yn = 1
+        WHERE 1 = 1
+        <include refid="DailyCheckLogConditions"/>
+        ORDER BY dcl.check_date DESC, dcl.check_id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectDailyCheckLogCount" resultType="int">
+        SELECT COUNT(*)
+        FROM daily_check_log dcl
+            LEFT JOIN daily_checklist dc ON dc.checklist_id = dcl.checklist_id
+            LEFT JOIN admin_user au ON au.user_id = dcl.writer_id AND au.use_yn = 1
+        WHERE 1 = 1
+        <include refid="DailyCheckLogConditions"/>
+    </select>
+
+    <sql id="DailyCheckLogConditions">
+        <if test="startDate != null and startDate != ''">
+            AND dcl.check_date <![CDATA[>=]]> #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND dcl.check_date <![CDATA[<=]]> #{endDate}
+        </if>
+        <if test="siteCd != null and siteCd != ''">
+            AND dcl.site_cd = #{siteCd}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                dcl.check_no LIKE CONCAT('%', #{keyword}, '%')
+                OR dc.checklist_name LIKE CONCAT('%', #{keyword}, '%')
+                OR au.user_nm LIKE CONCAT('%', #{keyword}, '%')
+                OR dcl.writer_id LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+    </sql>
+
+    <select id="selectDailyCheckLog" resultType="DailyCheckLog">
+        SELECT
+            dcl.check_id,
+            dcl.check_no,
+            DATE_FORMAT(dcl.check_date, '%Y-%m-%d') AS check_date,
+            dcl.checklist_id,
+            dc.checklist_name,
+            dcl.site_cd,
+            si.site_name,
+            dcl.writer_id,
+            au.user_nm AS writer_nm,
+            dcl.status_cd,
+            dcl.weather_cd,
+            dcl.remark,
+            DATE_FORMAT(dcl.reg_dt, '%Y-%m-%d %H:%i') AS reg_dt,
+            DATE_FORMAT(dcl.upd_dt, '%Y-%m-%d %H:%i') AS upd_dt
+        FROM daily_check_log dcl
+            LEFT JOIN daily_checklist dc ON dc.checklist_id = dcl.checklist_id
+            LEFT JOIN site_info si ON si.site_cd = dcl.site_cd AND si.del_yn = 'N'
+            LEFT JOIN admin_user au ON au.user_id = dcl.writer_id AND au.use_yn = 1
+        WHERE dcl.check_id = #{checkId}
+    </select>
+
+    <select id="selectDailyCheckLogItemList" resultType="DailyCheckLogItem">
+        SELECT
+            log_item_id,
+            check_id,
+            item_id,
+            item_name,
+            input_type,
+            required_yn,
+            check_value,
+            sort_ord
+        FROM daily_check_log_item
+        WHERE check_id = #{checkId}
+        ORDER BY sort_ord ASC, log_item_id ASC
+    </select>
+
     <select id="selectNextDailyCheckNo" parameterType="string" resultType="string">
         SELECT CONCAT('DC', #{ymd}, LPAD(IFNULL(MAX(CAST(SUBSTRING(check_no, 11) AS UNSIGNED)), 0) + 1, 4, '0'))
         FROM daily_check_log

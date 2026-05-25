@@ -18,6 +18,7 @@
                   <!-- 현장관리: ATH100(최고) or ATH200(현장)만 -->
                   <sec:authorize access="hasAnyAuthority('ATH100','ATH200')">
                     <a href="/admin/ims/dashboard">현장관리</a>
+                    <a href="/admin/daily-checks">일상점검</a>
                   </sec:authorize>
 
                   <!-- 관리자설정: ATH100(최고)만 -->
