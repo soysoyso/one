@@ -156,6 +156,19 @@ CREATE TABLE IF NOT EXISTS daily_check_log_item (
   KEY idx_daily_check_log_item_parent (check_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS daily_check_photo (
+  photo_id bigint NOT NULL AUTO_INCREMENT,
+  check_id bigint NOT NULL,
+  photo_gb varchar(20) NOT NULL,
+  img_path varchar(1000),
+  img_name varchar(500),
+  sort_ord int DEFAULT 0,
+  reg_dt datetime,
+  PRIMARY KEY (photo_id),
+  KEY idx_daily_check_photo_parent (check_id),
+  KEY idx_daily_check_photo_gb (photo_gb)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS incident (
   report_no varchar(50) NOT NULL,
   report_date datetime,

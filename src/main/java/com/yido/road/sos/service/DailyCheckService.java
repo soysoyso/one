@@ -2,17 +2,25 @@ package com.yido.road.sos.service;
 
 import com.yido.road.sos.model.DailyCheckLog;
 import com.yido.road.sos.model.DailyCheckLogItem;
+import com.yido.road.sos.model.DailyCheckPhoto;
 import com.yido.road.sos.model.DailyChecklist;
 import com.yido.road.sos.model.DailyChecklistItem;
 import com.yido.road.sos.repository.main.DailyCheckLogMapper;
+import com.yido.road.sos.repository.main.DailyCheckPhotoMapper;
 import com.yido.road.sos.repository.main.DailyChecklistMapper;
 import com.yido.road.sos.security.UserCustom;
 import com.yido.road.sos.util.ResultVO;
 import com.yido.road.sos.util.Utils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -25,6 +33,10 @@ import java.util.Map;
 public class DailyCheckService {
     private final DailyChecklistMapper dailyChecklistMapper;
     private final DailyCheckLogMapper dailyCheckLogMapper;
+    private final DailyCheckPhotoMapper dailyCheckPhotoMapper;
+
+    @Value("${Globals.File.UploadPath}")
+    private String uploadRoot;
 
     public List<DailyChecklist> getUsableChecklists(UserCustom loginUser) {
         String siteCd = getSiteCd(loginUser);
@@ -95,6 +107,20 @@ public class DailyCheckService {
         return result;
     }
 
+    @Transactional
+    public ResultVO saveDailyCheck(Map<String, Object> params, MultipartFile[] beforePhotos,
+                                   MultipartFile[] afterPhotos, UserCustom loginUser) {
+        ResultVO result = saveDailyCheck(params, loginUser);
+        if (!"0000".equals(result.getCode())) {
+            return result;
+        }
+
+        DailyCheckLog log = (DailyCheckLog) result.getData();
+        savePhotos(log.getCheckId(), "BEFORE", beforePhotos);
+        savePhotos(log.getCheckId(), "AFTER", afterPhotos);
+        return result;
+    }
+
     private List<DailyCheckLogItem> toLogItems(Map<String, Object> params, DailyChecklist checklist) {
         Map<String, String> valueMap = new HashMap<>();
         for (Map.Entry<String, Object> entry : params.entrySet()) {
@@ -135,6 +161,53 @@ public class DailyCheckService {
             return "";
         }
         return loginUser.getSiteInfo().getSiteCd();
+    }
+
+    private void savePhotos(Long checkId, String photoGb, MultipartFile[] photos) {
+        if (checkId == null || photos == null || photos.length == 0) {
+            return;
+        }
+
+        int sortOrd = 1;
+        for (MultipartFile photo : photos) {
+            if (photo == null || photo.isEmpty()) {
+                continue;
+            }
+
+            DailyCheckPhoto saved = savePhotoFile(checkId, photoGb, sortOrd, photo);
+            dailyCheckPhotoMapper.insertDailyCheckPhoto(saved);
+            sortOrd++;
+        }
+    }
+
+    private DailyCheckPhoto savePhotoFile(Long checkId, String photoGb, int sortOrd, MultipartFile file) {
+        String ext = StringUtils.getFilenameExtension(file.getOriginalFilename());
+        if (ext == null || ext.trim().isEmpty()) {
+            ext = "jpg";
+        }
+        ext = ext.toLowerCase();
+
+        String relativePath = "daily-check/" + checkId + "/" + photoGb.toLowerCase() + "/";
+        File dir = new File(uploadRoot, relativePath);
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new IllegalStateException("사진 저장 폴더를 만들 수 없습니다.");
+        }
+
+        String fileName = "daily_" + checkId + "_" + photoGb + "_" + sortOrd + "_" + System.currentTimeMillis() + "." + ext;
+        File target = new File(dir, fileName);
+        try {
+            file.transferTo(target);
+        } catch (IOException e) {
+            throw new UncheckedIOException("사진 저장 중 오류가 발생했습니다.", e);
+        }
+
+        DailyCheckPhoto photo = new DailyCheckPhoto();
+        photo.setCheckId(checkId);
+        photo.setPhotoGb(photoGb);
+        photo.setImgPath(relativePath);
+        photo.setImgName(fileName);
+        photo.setSortOrd(sortOrd);
+        return photo;
     }
 
     private boolean isBlank(String value) {

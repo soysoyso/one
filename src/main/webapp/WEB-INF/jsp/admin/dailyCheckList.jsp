@@ -96,6 +96,11 @@
                             <tbody id="detailItemBody"></tbody>
                         </table>
                     </div>
+
+                    <div class="mt-4" style="border-top:1px dotted #9f9f9f; padding-top:25px;">
+                        <h5 class="mb-3 fw-bold">사진</h5>
+                        <div id="detailPhotoBody" class="row g-2"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -231,6 +236,29 @@
                 '<td>' + formatValue(item) + '</td>' +
                 '<td>' + (item.requiredYn === 'Y' ? '필수' : '선택') + '</td>' +
                 '</tr>'
+            );
+        });
+
+        renderPhotos(data.photos || []);
+    }
+
+    function renderPhotos(photos) {
+        const $body = $('#detailPhotoBody');
+        $body.empty();
+        if (!photos.length) {
+            $body.html('<p class="text-muted">등록된 사진이 없습니다.</p>');
+            return;
+        }
+        photos.forEach(function (photo) {
+            const label = photo.photoGb === 'AFTER' ? '점검 후' : '점검 전';
+            const url = '/admin/daily-checks/photos/' + photo.photoId;
+            $body.append(
+                '<div class="col-6 col-md-3">' +
+                '<div class="border rounded p-2">' +
+                '<div class="mb-1 fw-bold">' + label + '</div>' +
+                '<img src="' + url + '" alt="' + label + '" style="width:100%; height:140px; object-fit:cover;">' +
+                '</div>' +
+                '</div>'
             );
         });
     }

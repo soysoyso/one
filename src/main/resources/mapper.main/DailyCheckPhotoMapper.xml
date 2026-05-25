@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yido.road.sos.repository.main.DailyCheckPhotoMapper">
+    <insert id="insertDailyCheckPhoto" parameterType="DailyCheckPhoto" useGeneratedKeys="true" keyProperty="photoId">
+        INSERT INTO daily_check_photo (
+            check_id,
+            photo_gb,
+            img_path,
+            img_name,
+            sort_ord,
+            reg_dt
+        ) VALUES (
+            #{checkId},
+            #{photoGb},
+            #{imgPath},
+            #{imgName},
+            #{sortOrd},
+            NOW()
+        )
+    </insert>
+
+    <select id="selectDailyCheckPhotos" resultType="DailyCheckPhoto">
+        SELECT
+            photo_id,
+            check_id,
+            photo_gb,
+            img_path,
+            img_name,
+            sort_ord,
+            DATE_FORMAT(reg_dt, '%Y-%m-%d %H:%i') AS reg_dt
+        FROM daily_check_photo
+        WHERE check_id = #{checkId}
+        ORDER BY photo_gb ASC, sort_ord ASC, photo_id ASC
+    </select>
+
+    <select id="selectDailyCheckPhoto" resultType="DailyCheckPhoto">
+        SELECT
+            photo_id,
+            check_id,
+            photo_gb,
+            img_path,
+            img_name,
+            sort_ord,
+            DATE_FORMAT(reg_dt, '%Y-%m-%d %H:%i') AS reg_dt
+        FROM daily_check_photo
+        WHERE photo_id = #{photoId}
+    </select>
+</mapper>

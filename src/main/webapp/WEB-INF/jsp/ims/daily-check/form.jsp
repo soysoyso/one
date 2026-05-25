@@ -38,6 +38,18 @@
             <textarea id="remark" name="remark" class="form-control" rows="4"></textarea>
         </div>
 
+        <div class="card mb-3">
+            <h5 class="fw-bold mb-3">사진</h5>
+            <div class="mb-3">
+                <label class="form-label">점검 전 사진</label>
+                <input type="file" id="beforePhotos" name="beforePhotos" class="form-control" accept="image/*" capture="environment" multiple>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">점검 후 사진</label>
+                <input type="file" id="afterPhotos" name="afterPhotos" class="form-control" accept="image/*" capture="environment" multiple>
+            </div>
+        </div>
+
         <div class="d-grid gap-2 mb-4">
             <button type="button" id="btnSaveDailyCheck" class="btn btn-primary btn-lg">저장</button>
         </div>
@@ -125,10 +137,14 @@
             return;
         }
 
+        const formData = new FormData(document.getElementById('dailyCheckForm'));
+
         $.ajax({
-            url: '/manage/daily-checks/save',
+            url: '/manage/daily-checks/save-with-photos',
             type: 'POST',
-            data: $('#dailyCheckForm').serialize(),
+            data: formData,
+            processData: false,
+            contentType: false,
             success: function (res) {
                 if (res.code !== '0000') {
                     alert(res.message || '저장할 수 없습니다.');

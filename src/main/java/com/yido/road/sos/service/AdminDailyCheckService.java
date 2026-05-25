@@ -1,6 +1,7 @@
 package com.yido.road.sos.service;
 
 import com.yido.road.sos.model.DailyCheckLog;
+import com.yido.road.sos.repository.main.DailyCheckPhotoMapper;
 import com.yido.road.sos.repository.main.DailyCheckLogMapper;
 import com.yido.road.sos.util.Utils;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AdminDailyCheckService {
     private final DailyCheckLogMapper dailyCheckLogMapper;
+    private final DailyCheckPhotoMapper dailyCheckPhotoMapper;
 
     public Map<String, Object> getDailyCheckListData(Map<String, Object> params) {
         Map<String, Object> searchParams = new HashMap<>();
@@ -60,6 +62,7 @@ public class AdminDailyCheckService {
         DailyCheckLog detail = dailyCheckLogMapper.selectDailyCheckLog(checkId);
         if (detail != null) {
             detail.setItems(dailyCheckLogMapper.selectDailyCheckLogItemList(checkId));
+            detail.setPhotos(dailyCheckPhotoMapper.selectDailyCheckPhotos(checkId));
         }
         return detail;
     }

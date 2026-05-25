@@ -22,4 +22,5 @@ public class DailyCheckLog {
     private String regDt;
     private String updDt;
     private List<DailyCheckLogItem> items;
+    private List<DailyCheckPhoto> photos;
 }
