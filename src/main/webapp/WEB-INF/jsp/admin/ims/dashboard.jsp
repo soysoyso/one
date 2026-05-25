@@ -126,9 +126,15 @@
             </div>
         </div>
 
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 align-items-center">
+            <select class="form-select" id="ledgerExportFormat" style="width: 110px;">
+                <option value="pdf">PDF</option>
+                <option value="docx">DOCX</option>
+                <option value="hwpx">HWPX</option>
+            </select>
+
             <button type="button" class="btn btn-outline-success" id="btnLedgerDownload">
-                <i class="bi bi-download"></i> 관리대장 다운로드
+                <i class="bi bi-download"></i> 보고서 다운로드
             </button>
 
             <button type="button" class="btn btn-outline-primary" id="btnPhotoDownload">
@@ -2192,14 +2198,27 @@ console.log(list);
                 return;
             }
 
-            downloadLedgerPdf(reportNos);
+            downloadLedgerReport(reportNos);
         });
 
-    function downloadLedgerPdf(reportNos) {
+    function downloadLedgerReport(reportNos) {
+        var format = ($('#ledgerExportFormat').val() || 'pdf').toLowerCase();
         var $form = $('<form>', {
             method: 'post',
-            action: '/admin/ims/report/ledger/pdf'
+            action: '/admin/reports/export'
         });
+
+        $form.append($('<input>', {
+            type: 'hidden',
+            name: 'template',
+            value: 'POTHOLE_LEDGER'
+        }));
+
+        $form.append($('<input>', {
+            type: 'hidden',
+            name: 'format',
+            value: format
+        }));
 
         for (var i = 0; i < reportNos.length; i++) {
             $form.append(

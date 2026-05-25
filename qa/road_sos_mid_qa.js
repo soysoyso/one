@@ -28,6 +28,19 @@ async function expectDocumentDownload(request, name, url) {
   await expectOk(`${name} package`, isZipPackage(buffer));
 }
 
+async function expectReportExportDownload(request, name, format) {
+  const response = await request.post(`${baseUrl}/admin/reports/export`, {
+    form: {
+      reportNos: 'LOCAL-QA-REPORT',
+      template: 'POTHOLE_LEDGER',
+      format
+    }
+  });
+  await expectOk(`${name} status`, response.ok());
+  const buffer = await response.body();
+  await expectOk(`${name} package`, isZipPackage(buffer));
+}
+
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -35,6 +48,12 @@ async function main() {
   try {
     await login(page, 'admin', 'admin123', '/admin/login');
     await expectOk('admin login', page.url().includes('/admin/'));
+
+    await page.goto(`${baseUrl}/admin/ims/dashboard`, { waitUntil: 'domcontentloaded' });
+    await expectOk('ims dashboard page', await page.locator('body').innerText().then(t => t.includes('현장') || t.includes('접수')));
+    await expectOk('ledger export format select', await page.locator('#ledgerExportFormat option').evaluateAll(options => {
+      return options.map(option => option.value).join(',') === 'pdf,docx,hwpx';
+    }));
 
     await page.goto(`${baseUrl}/admin/notification/recipients`, { waitUntil: 'domcontentloaded' });
     await expectOk('notification recipient page', await page.locator('body').innerText().then(t => t.includes('알림') || t.includes('수신')));
@@ -53,6 +72,8 @@ async function main() {
     const templates = await page.request.get(`${baseUrl}/admin/reports/templates`);
     const templatesJson = await templates.json();
     await expectOk('report template list', templatesJson.success === true && Array.isArray(templatesJson.data) && templatesJson.data.length >= 9);
+    await expectReportExportDownload(page.request, 'pothole ledger docx export', 'docx');
+    await expectReportExportDownload(page.request, 'pothole ledger hwpx export', 'hwpx');
 
     const badSave = await page.request.post(`${baseUrl}/admin/situation-logs/save`, {
       form: {

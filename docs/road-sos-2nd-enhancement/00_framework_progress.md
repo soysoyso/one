@@ -27,6 +27,11 @@
 - 추가 범위: `daily_check_photo`, 사용자 사진 포함 저장 API, 사용자/관리자 사진 조회 API, 관리자 상세 사진 미리보기.
 - 검증: 빌드 성공, 마이그레이션 적용, 앱 재기동, 테스트 이미지 업로드 저장, 관리자 이미지 조회 HTTP 200 확인.
 
+## 2026-05-25 보고서 출력 UI 업데이트
+- `feature/report-template-export-ui` 브랜치에서 현장관리 보고서 다운로드 UI를 확장한다.
+- 추가 범위: 접수 선택 기반 포트홀 관리대장 `PDF/DOCX/HWPX` 선택 다운로드, 통합 export API 연결, Playwright QA 보강.
+- 검증: Docker 빌드 및 중간 QA에서 확인한다.
+
 ## 기준
 
 - 기준 프레임워크: `C:\Users\YIDO\Desktop\YIDO250728\codex\ai-service-framework`
