@@ -4,6 +4,7 @@ import com.yido.road.sos.model.DailyCheckLog;
 import com.yido.road.sos.model.DailyCheckLogItem;
 import com.yido.road.sos.model.DailyCheckPhoto;
 import com.yido.road.sos.model.SituationLog;
+import com.yido.road.sos.enums.ReportTemplateCode;
 import org.apache.poi.xwpf.usermodel.Borders;
 import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
 import org.apache.poi.xwpf.usermodel.TextAlignment;
@@ -31,6 +32,49 @@ import java.util.zip.ZipOutputStream;
 @Service
 public class ReportDocumentService {
     private static final String FONT = "맑은 고딕";
+
+    public byte[] buildPotholeTemplateDocx(ReportTemplateCode templateCode, Map<String, Object> data) throws Exception {
+        if (templateCode == ReportTemplateCode.POTHOLE_LEDGER) {
+            return buildPotholeLedgerDocx(data);
+        }
+
+        XWPFDocument doc = new XWPFDocument();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try {
+            addTitle(doc, templateCode.getDisplayName());
+            addMetaLine(doc, "현장: " + value(data.get("siteName")));
+            addMetaLine(doc, "보고연도: " + value(data.get("reportYear")));
+            addMetaLine(doc, "출력일시: " + nowText());
+            addTemplateSummary(doc, templateCode, data);
+            addTemplateRows(doc, templateCode, data);
+
+            doc.write(out);
+            return out.toByteArray();
+        } finally {
+            doc.close();
+            out.close();
+        }
+    }
+
+    public byte[] buildPotholeTemplateHwpx(ReportTemplateCode templateCode, Map<String, Object> data) throws Exception {
+        if (templateCode == ReportTemplateCode.POTHOLE_LEDGER) {
+            return buildPotholeLedgerHwpx(data);
+        }
+
+        List<String> lines = new ArrayList<String>();
+        lines.add(templateCode.getDisplayName());
+        lines.add("현장: " + value(data.get("siteName")));
+        lines.add("보고연도: " + value(data.get("reportYear")));
+        lines.add("출력일시: " + nowText());
+        appendTemplateSummaryLines(lines, templateCode, data);
+        for (Map<String, Object> row : flattenPotholeRows(data)) {
+            lines.add(value(row.get("reportNo")) + " / "
+                    + value(row.get("reportDate")) + " / "
+                    + firstNotBlank(value(row.get("locationInfo")), value(row.get("region"))) + " / "
+                    + value(row.get("areaM2")));
+        }
+        return buildSimpleHwpx(templateCode.getDisplayName(), lines);
+    }
 
     public byte[] buildPotholeLedgerDocx(Map<String, Object> data) throws Exception {
         XWPFDocument doc = new XWPFDocument();
@@ -176,6 +220,75 @@ public class ReportDocumentService {
             setCellText(tr.getCell(7), value(row.get("occurPlaceText")), false);
             setCellText(tr.getCell(8), value(row.get("areaM2")), false);
         }
+    }
+
+    private void addTemplateSummary(XWPFDocument doc, ReportTemplateCode templateCode, Map<String, Object> data) {
+        Map<String, Object> yearSummary = asMap(data.get("yearSummary"));
+        String[][] rows = new String[][]{
+                {"템플릿", templateCode.getDisplayName(), "출력구분", templateCode.name()},
+                {"접수건수", value(yearSummary.get("potholeCount")), "전체면적", value(yearSummary.get("areaM2"))},
+                {"대상월수", String.valueOf(mapList(data.get("monthGroups")).size()), "비고", templateGuide(templateCode)}
+        };
+        addKeyValueTable(doc, rows);
+    }
+
+    private void addTemplateRows(XWPFDocument doc, ReportTemplateCode templateCode, Map<String, Object> data) {
+        List<Map<String, Object>> rows = flattenPotholeRows(data);
+        addSectionTitle(doc, "접수 내역");
+        XWPFTable table = doc.createTable(Math.max(rows.size() + 1, 2), 8);
+        setTableWidth(table);
+        setHeaderRow(table.getRow(0), new String[]{"NO", "접수번호", "일자", "현장", "위치", "포장", "발생장소", "면적"});
+        if (rows.isEmpty()) {
+            setCellText(table.getRow(1).getCell(1), "출력할 데이터가 없습니다.", false);
+            return;
+        }
+        for (int i = 0; i < rows.size(); i++) {
+            Map<String, Object> row = rows.get(i);
+            XWPFTableRow tr = table.getRow(i + 1);
+            setCellText(tr.getCell(0), String.valueOf(i + 1), false);
+            setCellText(tr.getCell(1), value(row.get("reportNo")), false);
+            setCellText(tr.getCell(2), value(row.get("reportDate")), false);
+            setCellText(tr.getCell(3), value(row.get("siteName")), false);
+            setCellText(tr.getCell(4), firstNotBlank(value(row.get("locationInfo")), value(row.get("region"))), false);
+            setCellText(tr.getCell(5), value(row.get("pavementText")), false);
+            setCellText(tr.getCell(6), value(row.get("occurPlaceText")), false);
+            setCellText(tr.getCell(7), value(row.get("areaM2")), false);
+        }
+    }
+
+    private void appendTemplateSummaryLines(List<String> lines, ReportTemplateCode templateCode, Map<String, Object> data) {
+        Map<String, Object> yearSummary = asMap(data.get("yearSummary"));
+        lines.add("템플릿: " + templateCode.name());
+        lines.add("접수건수: " + value(yearSummary.get("potholeCount")));
+        lines.add("전체면적: " + value(yearSummary.get("areaM2")));
+        lines.add("비고: " + templateGuide(templateCode));
+    }
+
+    private String templateGuide(ReportTemplateCode templateCode) {
+        if (templateCode == ReportTemplateCode.POTHOLE_SUMMARY) {
+            return "기간별 포트홀 집계 기본 출력";
+        }
+        if (templateCode == ReportTemplateCode.MAINTENANCE_LOG) {
+            return "접수별 유지보수 작업 내역 기본 출력";
+        }
+        if (templateCode == ReportTemplateCode.LANDSCAPE_DAILY_WORK) {
+            return "조경 작업일보 기본 출력";
+        }
+        if (templateCode == ReportTemplateCode.MAINTENANCE_RESULT) {
+            return "유지관리 결과보고서 기본 출력";
+        }
+        if (templateCode == ReportTemplateCode.PHOTO_BOARD) {
+            return "사진대지 기본 출력. 사진 배치 정밀화는 후속 단계";
+        }
+        return "접수 기반 기본 출력";
+    }
+
+    private List<Map<String, Object>> flattenPotholeRows(Map<String, Object> data) {
+        List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
+        for (Map<String, Object> group : mapList(data.get("monthGroups"))) {
+            rows.addAll(mapList(group.get("rows")));
+        }
+        return rows;
     }
 
     private void addKeyValueTable(XWPFDocument doc, String[][] rows) {
@@ -367,6 +480,14 @@ public class ReportDocumentService {
             return (List<Map<String, Object>>) value;
         }
         return new ArrayList<Map<String, Object>>();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> asMap(Object value) {
+        if (value instanceof Map) {
+            return (Map<String, Object>) value;
+        }
+        return new java.util.HashMap<String, Object>();
     }
 
     @SuppressWarnings("unchecked")

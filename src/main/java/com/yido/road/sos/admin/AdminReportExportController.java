@@ -68,16 +68,17 @@ public class AdminReportExportController {
         ReportTemplateCode templateCode = ReportTemplateCode.from(template);
         ReportExportFormat exportFormat = ReportExportFormat.from(format);
 
-        if (templateCode != ReportTemplateCode.POTHOLE_LEDGER) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "해당 통합 출력 API는 포트홀 관리대장만 지원합니다.");
-            return;
-        }
-
         Map<String, Object> ledgerData = adminPotholeService.getLedgerPdfData(reportNos, loginUser);
         String reportYear = ledgerData.get("reportYear") == null ? "" : String.valueOf(ledgerData.get("reportYear"));
-        String fileName = "포트홀_관리대장_" + reportYear + "년." + exportFormat.getExtension();
+        String fileName = templateCode.getDisplayName().replaceAll("[\\\\/:*?\"<>|]", "_")
+                + (reportYear.isEmpty() ? "" : "_" + reportYear + "년")
+                + "." + exportFormat.getExtension();
 
         if (exportFormat == ReportExportFormat.PDF) {
+            if (templateCode != ReportTemplateCode.POTHOLE_LEDGER) {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "PDF는 포트홀 관리대장만 지원합니다.");
+                return;
+            }
             setDownloadHeaders(response, fileName, exportFormat.getContentType());
             imsReportPdfService.makeLedgerPdfFromJsp(ledgerData, request, response, response.getOutputStream());
             return;
@@ -85,9 +86,9 @@ public class AdminReportExportController {
 
         byte[] bytes;
         if (exportFormat == ReportExportFormat.DOCX) {
-            bytes = reportDocumentService.buildPotholeLedgerDocx(ledgerData);
+            bytes = reportDocumentService.buildPotholeTemplateDocx(templateCode, ledgerData);
         } else if (exportFormat == ReportExportFormat.HWPX) {
-            bytes = reportDocumentService.buildPotholeLedgerHwpx(ledgerData);
+            bytes = reportDocumentService.buildPotholeTemplateHwpx(templateCode, ledgerData);
         } else {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "지원하지 않는 출력 형식입니다.");
             return;
@@ -107,7 +108,7 @@ public class AdminReportExportController {
                 || code == ReportTemplateCode.SITUATION_LOG) {
             return new String[]{"docx", "hwpx"};
         }
-        return new String[]{"docx"};
+        return new String[]{"docx", "hwpx"};
     }
 
     private void setDownloadHeaders(HttpServletResponse response, String fileName, String contentType) throws Exception {

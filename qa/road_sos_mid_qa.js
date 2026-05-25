@@ -41,6 +41,19 @@ async function expectReportExportDownload(request, name, format) {
   await expectOk(`${name} package`, isZipPackage(buffer));
 }
 
+async function expectTemplateExportDownload(request, name, template, format) {
+  const response = await request.post(`${baseUrl}/admin/reports/export`, {
+    form: {
+      reportNos: 'LOCAL-QA-REPORT',
+      template,
+      format
+    }
+  });
+  await expectOk(`${name} status`, response.ok());
+  const buffer = await response.body();
+  await expectOk(`${name} package`, isZipPackage(buffer));
+}
+
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -51,6 +64,10 @@ async function main() {
 
     await page.goto(`${baseUrl}/admin/ims/dashboard`, { waitUntil: 'domcontentloaded' });
     await expectOk('ims dashboard page', await page.locator('body').innerText().then(t => t.includes('현장') || t.includes('접수')));
+    await expectOk('ledger export template select', await page.locator('#ledgerExportTemplate option').evaluateAll(options => {
+      const values = options.map(option => option.value);
+      return values.includes('POTHOLE_LEDGER') && values.includes('PHOTO_BOARD') && values.includes('MAINTENANCE_RESULT');
+    }));
     await expectOk('ledger export format select', await page.locator('#ledgerExportFormat option').evaluateAll(options => {
       return options.map(option => option.value).join(',') === 'pdf,docx,hwpx';
     }));
@@ -74,6 +91,17 @@ async function main() {
     await expectOk('report template list', templatesJson.success === true && Array.isArray(templatesJson.data) && templatesJson.data.length >= 9);
     await expectReportExportDownload(page.request, 'pothole ledger docx export', 'docx');
     await expectReportExportDownload(page.request, 'pothole ledger hwpx export', 'hwpx');
+    await expectTemplateExportDownload(page.request, 'photo board docx export', 'PHOTO_BOARD', 'docx');
+    await expectTemplateExportDownload(page.request, 'maintenance result hwpx export', 'MAINTENANCE_RESULT', 'hwpx');
+
+    const unsupportedPdf = await page.request.post(`${baseUrl}/admin/reports/export`, {
+      form: {
+        reportNos: 'LOCAL-QA-REPORT',
+        template: 'PHOTO_BOARD',
+        format: 'pdf'
+      }
+    });
+    await expectOk('non ledger pdf rejected', unsupportedPdf.status() === 400);
 
     const badSave = await page.request.post(`${baseUrl}/admin/situation-logs/save`, {
       form: {

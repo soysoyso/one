@@ -127,6 +127,15 @@
         </div>
 
         <div class="d-flex gap-2 align-items-center">
+            <select class="form-select" id="ledgerExportTemplate" style="width: 190px;">
+                <option value="POTHOLE_LEDGER">포트홀 관리대장</option>
+                <option value="POTHOLE_SUMMARY">포트홀 집계표</option>
+                <option value="MAINTENANCE_LOG">유지보수 일지</option>
+                <option value="LANDSCAPE_DAILY_WORK">조경 작업일보</option>
+                <option value="MAINTENANCE_RESULT">유지관리 결과보고서</option>
+                <option value="PHOTO_BOARD">사진대지</option>
+            </select>
+
             <select class="form-select" id="ledgerExportFormat" style="width: 110px;">
                 <option value="pdf">PDF</option>
                 <option value="docx">DOCX</option>
@@ -2202,6 +2211,7 @@ console.log(list);
         });
 
     function downloadLedgerReport(reportNos) {
+        var template = ($('#ledgerExportTemplate').val() || 'POTHOLE_LEDGER').toUpperCase();
         var format = ($('#ledgerExportFormat').val() || 'pdf').toLowerCase();
         var $form = $('<form>', {
             method: 'post',
@@ -2211,7 +2221,7 @@ console.log(list);
         $form.append($('<input>', {
             type: 'hidden',
             name: 'template',
-            value: 'POTHOLE_LEDGER'
+            value: template
         }));
 
         $form.append($('<input>', {
@@ -2234,6 +2244,21 @@ console.log(list);
         $form.trigger('submit');
         $form.remove();
     }
+
+    function syncLedgerExportFormatOptions() {
+        var template = ($('#ledgerExportTemplate').val() || 'POTHOLE_LEDGER').toUpperCase();
+        var isLedger = template === 'POTHOLE_LEDGER';
+        $('#ledgerExportFormat option[value="pdf"]').prop('disabled', !isLedger);
+        if (!isLedger && ($('#ledgerExportFormat').val() || '').toLowerCase() === 'pdf') {
+            $('#ledgerExportFormat').val('docx');
+        }
+    }
+
+    $(document)
+        .off('change.imsLedgerTemplate', '#ledgerExportTemplate')
+        .on('change.imsLedgerTemplate', '#ledgerExportTemplate', syncLedgerExportFormatOptions);
+
+    syncLedgerExportFormatOptions();
 
     // 관리자 모달 삭제 버튼 클릭
     $(document)
