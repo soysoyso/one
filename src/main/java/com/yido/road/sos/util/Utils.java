@@ -3,6 +3,7 @@ package com.yido.road.sos.util;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
@@ -155,19 +156,24 @@ public class Utils {
 
         try{
 
-        	String propFile = "";
+            String profile = type == null ? "" : type.trim();
+            String propFile = "application.properties";
 
-        	if (type.equals("develop")) propFile = new ClassPathResource("application-develop.properties").getURI().getPath();
-        	else if (type.equals("production")) propFile = new ClassPathResource("application-production.properties").getURI().getPath();
+        	if ("develop".equals(profile)) propFile = "application-develop.properties";
+        	else if ("production".equals(profile)) propFile = "application-production.properties";
+        	else if ("local".equals(profile)) propFile = "application-local.properties";
             Properties props = new Properties();
 
-            FileInputStream fis = new FileInputStream(propFile);
-
-            props.load(new java.io.BufferedInputStream(fis));
+            InputStream fis = new ClassPathResource(propFile).getInputStream();
+            try {
+                props.load(new java.io.BufferedInputStream(fis));
+            } finally {
+                fis.close();
+            }
 
             returnValue = props.getProperty(key) ;
         }catch(Exception e){
-            e.printStackTrace();
+            log.warn("properties 조회 실패 key={} type={}", key, type);
         }
 
         return returnValue == null ? defaultValue : returnValue.replace(" ", "") ;
