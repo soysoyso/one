@@ -4,6 +4,7 @@ bin/
 .idea/
 .sts4-cache/
 docker-data/
+node_modules/
 보고서양식/*.pdf
 .idea/dataSources/
 .idea/dataSources.xml
