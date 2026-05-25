@@ -44,9 +44,7 @@
                 </div>
             </div>
 
-            <div style="display:flex!important; justify-content:space-between; align-items:center;">
-                <p id="dailyCheckCount">총 <b>0</b>건</p>
-            </div>
+            <p id="dailyCheckCount">총 <b>0</b>건</p>
 
             <div class="data-zone">
                 <table class="table">
@@ -54,7 +52,7 @@
                     <tr>
                         <th>점검일자</th>
                         <th>점검번호</th>
-                        <th>체크리스트</th>
+                        <th>체크리스트명</th>
                         <th>현장</th>
                         <th>작성자</th>
                         <th>등록일시</th>
@@ -74,6 +72,8 @@
                 <div class="offcanvas-header">
                     <h4><b>일상점검 상세</b></h4>
                     <div>
+                        <button type="button" class="btn btn-success" id="btnDailyCheckDocx">DOCX 출력</button>
+                        <button type="button" class="btn btn-outline-success" id="btnDailyCheckHwpx">HWPX 출력</button>
                         <button type="button" class="btn btn-secondary" id="btnClosePanel">창닫기</button>
                     </div>
                 </div>
@@ -112,6 +112,7 @@
 
 <script>
     let currentPage = 1;
+    let currentCheckId = null;
 
     $(document).ready(function () {
         loadDailyChecks(1);
@@ -128,6 +129,14 @@
 
         $('#btnClosePanel').on('click', function () {
             $('#sidePanel').addClass('hidden');
+        });
+
+        $('#btnDailyCheckDocx').on('click', function () {
+            exportDailyCheck('docx');
+        });
+
+        $('#btnDailyCheckHwpx').on('click', function () {
+            exportDailyCheck('hwpx');
         });
     });
 
@@ -196,6 +205,7 @@
     }
 
     function loadDailyCheckDetail(checkId) {
+        currentCheckId = checkId;
         $.ajax({
             url: '/admin/daily-checks/' + checkId,
             type: 'GET',
@@ -217,7 +227,7 @@
         $('#detailInfoBody').html(
             '<tr><th>점검번호</th><td>' + escapeHtml(data.checkNo || '') + '</td></tr>' +
             '<tr><th>점검일자</th><td>' + escapeHtml(data.checkDate || '') + '</td></tr>' +
-            '<tr><th>체크리스트</th><td>' + escapeHtml(data.checklistName || '') + '</td></tr>' +
+            '<tr><th>체크리스트명</th><td>' + escapeHtml(data.checklistName || '') + '</td></tr>' +
             '<tr><th>현장</th><td>' + escapeHtml(data.siteName || data.siteCd || '') + '</td></tr>' +
             '<tr><th>작성자</th><td>' + escapeHtml(data.writerNm || data.writerId || '') + '</td></tr>' +
             '<tr><th>비고</th><td>' + escapeHtml(data.remark || '') + '</td></tr>'
@@ -227,6 +237,7 @@
         $('#detailItemBody').empty();
         if (!items.length) {
             $('#detailItemBody').append('<tr><td colspan="3" style="text-align:center; color:gray;">점검 항목이 없습니다.</td></tr>');
+            renderPhotos(data.photos || []);
             return;
         }
         items.forEach(function (item) {
@@ -261,6 +272,14 @@
                 '</div>'
             );
         });
+    }
+
+    function exportDailyCheck(format) {
+        if (!currentCheckId) {
+            showMsg('warning', '확인 필요', '출력할 일상점검을 먼저 선택하세요.');
+            return;
+        }
+        location.href = '/admin/daily-checks/export?checkIds=' + encodeURIComponent(currentCheckId) + '&format=' + encodeURIComponent(format);
     }
 
     function formatValue(item) {

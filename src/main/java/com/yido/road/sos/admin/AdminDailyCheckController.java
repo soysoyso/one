@@ -1,8 +1,8 @@
 package com.yido.road.sos.admin;
 
+import com.yido.road.sos.enums.ReportExportFormat;
 import com.yido.road.sos.model.DailyCheckLog;
 import com.yido.road.sos.model.DailyCheckPhoto;
-import com.yido.road.sos.enums.ReportExportFormat;
 import com.yido.road.sos.repository.main.DailyCheckPhotoMapper;
 import com.yido.road.sos.security.UserCustom;
 import com.yido.road.sos.service.AdminDailyCheckService;
@@ -10,18 +10,18 @@ import com.yido.road.sos.service.AdminUserService;
 import com.yido.road.sos.service.ReportDocumentService;
 import com.yido.road.sos.util.ResultVO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.util.FileCopyUtils;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -96,20 +96,6 @@ public class AdminDailyCheckController {
         FileCopyUtils.copy(new FileInputStream(file), response.getOutputStream());
     }
 
-    private String resolveContentType(String fileName) {
-        String lower = fileName == null ? "" : fileName.toLowerCase();
-        if (lower.endsWith(".png")) {
-            return "image/png";
-        }
-        if (lower.endsWith(".gif")) {
-            return "image/gif";
-        }
-        if (lower.endsWith(".webp")) {
-            return "image/webp";
-        }
-        return "image/jpeg";
-    }
-
     @PreAuthorize("hasAnyAuthority('ATH100','ATH200')")
     @GetMapping("/export")
     public void export(@RequestParam("checkIds") List<Long> checkIds,
@@ -132,6 +118,20 @@ public class AdminDailyCheckController {
         setDownloadHeaders(response, fileName, exportFormat.getContentType());
         response.setContentLength(bytes.length);
         response.getOutputStream().write(bytes);
+    }
+
+    private String resolveContentType(String fileName) {
+        String lower = fileName == null ? "" : fileName.toLowerCase();
+        if (lower.endsWith(".png")) {
+            return "image/png";
+        }
+        if (lower.endsWith(".gif")) {
+            return "image/gif";
+        }
+        if (lower.endsWith(".webp")) {
+            return "image/webp";
+        }
+        return "image/jpeg";
     }
 
     private void setDownloadHeaders(HttpServletResponse response, String fileName, String contentType) throws Exception {

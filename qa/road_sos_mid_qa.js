@@ -2,7 +2,7 @@ const { chromium } = require('playwright');
 
 const baseUrl = process.env.ROAD_SOS_BASE_URL || 'http://localhost:8703';
 
-async function login(page, userId, userPwd, loginType, loginPath) {
+async function login(page, userId, userPwd, loginPath) {
   await page.goto(`${baseUrl}${loginPath}`, { waitUntil: 'domcontentloaded' });
   await page.fill('input[name="userId"]', userId);
   await page.fill('input[name="userPwd"]', userPwd);
@@ -17,12 +17,23 @@ async function expectOk(name, condition) {
   console.log(`OK ${name}`);
 }
 
+function isZipPackage(buffer) {
+  return buffer && buffer.length > 2 && buffer[0] === 0x50 && buffer[1] === 0x4b;
+}
+
+async function expectDocumentDownload(request, name, url) {
+  const response = await request.get(url);
+  await expectOk(`${name} status`, response.ok());
+  const buffer = await response.body();
+  await expectOk(`${name} package`, isZipPackage(buffer));
+}
+
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 
   try {
-    await login(page, 'admin', 'admin123', 'admin', '/admin/login');
+    await login(page, 'admin', 'admin123', '/admin/login');
     await expectOk('admin login', page.url().includes('/admin/'));
 
     await page.goto(`${baseUrl}/admin/notification/recipients`, { waitUntil: 'domcontentloaded' });
@@ -33,9 +44,15 @@ async function main() {
 
     await page.goto(`${baseUrl}/admin/daily-checks`, { waitUntil: 'domcontentloaded' });
     await expectOk('admin daily check page', await page.locator('body').innerText().then(t => t.includes('일상점검')));
+    await expectOk('daily check export buttons', await page.locator('#btnDailyCheckDocx').count() === 1 && await page.locator('#btnDailyCheckHwpx').count() === 1);
 
     await page.goto(`${baseUrl}/admin/situation-logs`, { waitUntil: 'domcontentloaded' });
     await expectOk('situation log page', await page.locator('body').innerText().then(t => t.includes('상황일지')));
+    await expectOk('situation export buttons', await page.locator('#btnExportSituationDocx').count() === 1 && await page.locator('#btnExportSituationHwpx').count() === 1);
+
+    const templates = await page.request.get(`${baseUrl}/admin/reports/templates`);
+    const templatesJson = await templates.json();
+    await expectOk('report template list', templatesJson.success === true && Array.isArray(templatesJson.data) && templatesJson.data.length >= 9);
 
     const badSave = await page.request.post(`${baseUrl}/admin/situation-logs/save`, {
       form: {
@@ -70,6 +87,17 @@ async function main() {
     const detailJson = await detail.json();
     await expectOk('situation detail', detailJson.code === '0000' && detailJson.data.title === 'Playwright QA Situation');
 
+    await expectDocumentDownload(
+      page.request,
+      'situation docx export',
+      `${baseUrl}/admin/situation-logs/export?startDate=2026-05-25&endDate=2026-05-25&keyword=Playwright%20QA%20Situation&format=docx`
+    );
+    await expectDocumentDownload(
+      page.request,
+      'situation hwpx export',
+      `${baseUrl}/admin/situation-logs/export?startDate=2026-05-25&endDate=2026-05-25&keyword=Playwright%20QA%20Situation&format=hwpx`
+    );
+
     const update = await page.request.post(`${baseUrl}/admin/situation-logs/save`, {
       form: {
         situationId,
@@ -93,7 +121,7 @@ async function main() {
 
     const fieldContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const fieldPage = await fieldContext.newPage();
-    await login(fieldPage, 'field', 'field123', 'manage', '/manage/login');
+    await login(fieldPage, 'field', 'field123', '/manage/login');
     await fieldPage.goto(`${baseUrl}/manage/daily-checks/form`, { waitUntil: 'domcontentloaded' });
     await expectOk('field daily check form page', await fieldPage.locator('body').innerText().then(t => t.includes('일상점검') || t.includes('점검')));
     await fieldContext.close();
