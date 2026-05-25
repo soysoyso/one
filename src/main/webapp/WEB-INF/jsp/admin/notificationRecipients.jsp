@@ -227,7 +227,7 @@
                 '<tr>' +
                 '<td>' + escapeHtml(row.notificationTypeNm || row.notificationType || '') + '</td>' +
                 '<td>' + escapeHtml(row.recipientNm || '') + '</td>' +
-                '<td>' + escapeHtml(row.phoneNo || '') + '</td>' +
+                '<td>' + escapeHtml(maskPhone(row.phoneNo || '')) + '</td>' +
                 '<td>' + escapeHtml(siteName) + '</td>' +
                 '<td>' + useText + '</td>' +
                 '<td>' + (row.sortOrd || 0) + '</td>' +
@@ -247,6 +247,21 @@
             html += '<button type="button" class="btn ' + active + ' btn-sm mx-1" onclick="loadRecipients(' + i + ')">' + i + '</button>';
         }
         $('#paginationZone').html(html);
+    }
+
+    function maskPhone(phoneNo) {
+        const value = (phoneNo || '').trim();
+        const digits = value.replace(/[^0-9]/g, '');
+        if (digits.length === 11) {
+            return digits.replace(/(\d{3})(\d{4})(\d{4})/, '$1-****-$3');
+        }
+        if (digits.length === 10) {
+            return digits.replace(/(\d{3})(\d{3})(\d{4})/, '$1-***-$3');
+        }
+        if (value.length > 4) {
+            return value.substring(0, 3) + '****' + value.substring(value.length - 4);
+        }
+        return value;
     }
 
     function openPanel() {

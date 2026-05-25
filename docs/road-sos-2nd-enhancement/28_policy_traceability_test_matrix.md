@@ -35,7 +35,7 @@
 | 정책_ID | 테스트 케이스 | 검증 내용 | 구현/검증 위치 | 상태 |
 |---|---|---|---|---|
 | NOTIFY-001 | TC-NOTIFY-001 | 로컬 환경 실제 발송 차단 | `notification.send.local-stub=true`, `CommonService` | 통과 |
-| NOTIFY-002 | TC-NOTIFY-002 | 전화번호 개인정보 보호 검토 | 현재 평문 저장/표시 | 후속 |
+| NOTIFY-002 | TC-NOTIFY-002 | 목록 전화번호 마스킹 표시 | `notificationRecipients.jsp`, QA `notification phone masked` | 통과 |
 | NOTIFY-003 | TC-NOTIFY-003 | 알림 유형별 수신자 분리 | `notification_recipient.notification_type` | 통과 |
 
 ## 5. 권한 정책

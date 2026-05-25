@@ -74,6 +74,31 @@ async function main() {
 
     await page.goto(`${baseUrl}/admin/notification/recipients`, { waitUntil: 'domcontentloaded' });
     await expectOk('notification recipient page', await page.locator('body').innerText().then(t => t.includes('알림') || t.includes('수신')));
+    const recipientSave = await page.request.post(`${baseUrl}/admin/notification/recipients/save`, {
+      form: {
+        notificationType: 'POTHOLE_RECEIPT',
+        recipientNm: 'Playwright QA Recipient',
+        phoneNo: '010-9876-1234',
+        siteCd: '',
+        useYn: 'Y',
+        sortOrd: '0',
+        remark: 'QA masking check'
+      }
+    });
+    const recipientSaved = await recipientSave.json();
+    await expectOk('notification recipient create', recipientSaved.code === '0000' && recipientSaved.data && recipientSaved.data.recipientId);
+    const recipientId = recipientSaved.data.recipientId;
+    await page.goto(`${baseUrl}/admin/notification/recipients`, { waitUntil: 'domcontentloaded' });
+    await page.fill('#keyword', 'Playwright QA Recipient');
+    await page.click('#btnSearch');
+    await page.waitForTimeout(500);
+    const recipientText = await page.locator('#recipientTableBody').innerText();
+    await expectOk('notification phone masked', recipientText.includes('010-****-1234') && !recipientText.includes('010-9876-1234'));
+    const recipientRemove = await page.request.post(`${baseUrl}/admin/notification/recipients/delete`, {
+      form: { recipientId }
+    });
+    const recipientRemoved = await recipientRemove.json();
+    await expectOk('notification recipient delete', recipientRemoved.code === '0000');
 
     await page.goto(`${baseUrl}/admin/daily-checklists/setting`, { waitUntil: 'domcontentloaded' });
     await expectOk('daily checklist setting page', await page.locator('body').innerText().then(t => t.includes('체크리스트')));
