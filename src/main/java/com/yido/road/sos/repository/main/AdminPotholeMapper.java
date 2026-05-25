@@ -68,4 +68,6 @@ public interface AdminPotholeMapper {
 
     List<Map<String, Object>> selectLedgerRows(List<String> reportNos);
 
+    List<Map<String, Object>> selectLedgerRowsForReportExport(List<String> reportNos);
+
 }

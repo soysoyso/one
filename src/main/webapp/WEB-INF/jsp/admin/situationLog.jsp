@@ -12,6 +12,8 @@
                 <div>
                     <h4><b>상황일지 관리</b></h4>
                     <button type="button" class="btn btn-dark" id="btnNewSituation" style="margin-left:5px">상황 등록</button>
+                    <button type="button" class="btn btn-success" id="btnExportSituationDocx" style="margin-left:5px">DOCX 출력</button>
+                    <button type="button" class="btn btn-outline-success" id="btnExportSituationHwpx" style="margin-left:5px">HWPX 출력</button>
                 </div>
             </div>
 
@@ -154,6 +156,12 @@
         $('#btnNewSituation').on('click', function () {
             openNewPanel();
         });
+        $('#btnExportSituationDocx').on('click', function () {
+            exportSituations('docx');
+        });
+        $('#btnExportSituationHwpx').on('click', function () {
+            exportSituations('hwpx');
+        });
         $('#btnClosePanel').on('click', function () {
             $('#sidePanel').addClass('hidden');
         });
@@ -256,6 +264,18 @@
                 showMsg('error', '오류', '상황일지 상세 조회 중 오류가 발생했습니다.');
             }
         });
+    }
+
+    function exportSituations(format) {
+        const params = $.param({
+            startDate: $('#startDate').val(),
+            endDate: $('#endDate').val(),
+            shiftCd: $('#searchShiftCd').val(),
+            siteCd: $('#searchSiteCd').val(),
+            keyword: $('#keyword').val(),
+            format: format
+        });
+        location.href = '/admin/situation-logs/export?' + params;
     }
 
     function fillForm(data) {

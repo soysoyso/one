@@ -70,6 +70,36 @@ public class SituationLogService {
         return situationLogMapper.selectSituationLog(situationId);
     }
 
+    public Map<String, Object> getSituationLogReportData(Map<String, Object> params) {
+        Map<String, Object> searchParams = new HashMap<>();
+        String startDate = Utils.getParam(params, "startDate");
+        String endDate = Utils.getParam(params, "endDate");
+        String shiftCd = Utils.getParam(params, "shiftCd");
+        String siteCd = Utils.getParam(params, "siteCd");
+        String keyword = Utils.getParam(params, "keyword");
+
+        if (startDate.isEmpty() && endDate.isEmpty()) {
+            String today = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+            startDate = today;
+            endDate = today;
+        }
+
+        searchParams.put("startDate", startDate);
+        searchParams.put("endDate", endDate);
+        searchParams.put("shiftCd", shiftCd);
+        searchParams.put("siteCd", siteCd);
+        searchParams.put("keyword", keyword);
+        searchParams.put("useYn", "Y");
+        searchParams.put("offset", 0);
+        searchParams.put("pageSize", 1000);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("startDate", startDate);
+        result.put("endDate", endDate);
+        result.put("situationLogs", situationLogMapper.selectSituationLogList(searchParams));
+        return result;
+    }
+
     @Transactional
     public ResultVO saveSituationLog(Map<String, Object> params, UserCustom loginUser) {
         ResultVO result = validate(params);

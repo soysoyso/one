@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -65,6 +66,22 @@ public class AdminDailyCheckService {
             detail.setPhotos(dailyCheckPhotoMapper.selectDailyCheckPhotos(checkId));
         }
         return detail;
+    }
+
+    public Map<String, Object> getDailyCheckReportData(List<Long> checkIds) {
+        List<DailyCheckLog> logs = new ArrayList<>();
+        if (checkIds != null) {
+            for (Long checkId : checkIds) {
+                DailyCheckLog detail = getDailyCheckDetail(checkId);
+                if (detail != null) {
+                    logs.add(detail);
+                }
+            }
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("dailyChecks", logs);
+        return result;
     }
 
     private int parseInt(Object value, int defaultValue) {

@@ -796,6 +796,74 @@
         p.report_date ASC,
         p.report_no ASC
     </select>
-
-
+    <select id="selectLedgerRowsForReportExport" parameterType="list" resultType="hashmap">
+        SELECT
+            p.report_no AS reportNo,
+            DATE_FORMAT(p.report_date, '%Y') AS reportYear,
+            DATE_FORMAT(p.report_date, '%m') AS reportMonth,
+            s.site_name AS siteName,
+            p.addr AS region,
+            CASE
+                WHEN p.direction_cd = 'UP' THEN '상행'
+                WHEN p.direction_cd = 'DOWN' THEN '하행'
+                ELSE ''
+            END AS directionNm,
+            p.addr AS locationInfo,
+            p.process_note AS detailInfo,
+            DATE_FORMAT(p.report_date, '%Y.%m.%d') AS reportDate,
+            DATE_FORMAT(p.report_date, '%m/%d') AS reportDateMmdd,
+            DATE_FORMAT(p.report_date, '%Y.%m.%d') AS workDate,
+            DATE_FORMAT(p.report_date, '%m/%d') AS workDateMmdd,
+            DATE_FORMAT(p.report_date, '%H:%i') AS reportTime,
+            cw.cd_code_nm AS weatherNm,
+            DATE_FORMAT(p.report_date, '%H:%i') AS workTime,
+            cww.cd_code_nm AS workWeatherNm,
+            '' AS pavementTypeCds,
+            '' AS occurPlaceCds,
+            p.lane_info AS laneInfo,
+            p.report_remark AS reportRemark,
+            p.work_qty AS workQty,
+            p.convert_work_qty AS convertWorkQty,
+            p.account_work_qty AS accountWorkQty,
+            NULL AS widthM,
+            NULL AS heightM,
+            NULL AS areaM2,
+            NULL AS depthCm,
+            NULL AS spanM,
+            bf.img_path AS beforeImgPath,
+            bf.img_name AS beforeImgName,
+            af.img_path AS afterImgPath,
+            af.img_name AS afterImgName
+        FROM pothole p
+            LEFT JOIN site_info s ON s.site_cd = p.site_cd
+            LEFT JOIN cd_common cw ON cw.cd_div = '007' AND cw.cd_code = p.weather_cd
+            LEFT JOIN cd_common cww ON cww.cd_div = '007' AND cww.cd_code = p.work_weather_cd
+            LEFT JOIN (
+                SELECT p1.report_no, p1.file_path AS img_path, p1.file_name AS img_name
+                FROM pothole_photo p1
+                INNER JOIN (
+                    SELECT report_no, COALESCE(MIN(CASE WHEN is_main = 'Y' THEN sort_no END), MIN(sort_no)) AS pick_sort_ord
+                    FROM pothole_photo
+                    WHERE photo_gb = 'BEFORE'
+                    GROUP BY report_no
+                ) x ON p1.report_no = x.report_no AND p1.sort_no = x.pick_sort_ord
+                WHERE p1.photo_gb = 'BEFORE'
+            ) bf ON bf.report_no = p.report_no
+            LEFT JOIN (
+                SELECT p1.report_no, p1.file_path AS img_path, p1.file_name AS img_name
+                FROM pothole_photo p1
+                INNER JOIN (
+                    SELECT report_no, COALESCE(MIN(CASE WHEN is_main = 'Y' THEN sort_no END), MIN(sort_no)) AS pick_sort_ord
+                    FROM pothole_photo
+                    WHERE photo_gb = 'AFTER'
+                    GROUP BY report_no
+                ) x ON p1.report_no = x.report_no AND p1.sort_no = x.pick_sort_ord
+                WHERE p1.photo_gb = 'AFTER'
+            ) af ON af.report_no = p.report_no
+        WHERE p.report_no IN
+        <foreach collection="list" item="reportNo" open="(" separator="," close=")">
+            #{reportNo}
+        </foreach>
+        ORDER BY DATE_FORMAT(p.report_date, '%m') ASC, p.report_date ASC, p.report_no ASC
+    </select>
 </mapper>

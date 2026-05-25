@@ -703,6 +703,7 @@ public class AdminPotholeService {
     private String getMainPhotoBase64(String reportNo, String photoGb) {
 
         try {
+            if (!isLedgerPhotoBase64Enabled()) return "";
             PotholeImage main = findMainPhoto(reportNo, photoGb);
             if (main == null) return "";
 
@@ -721,6 +722,10 @@ public class AdminPotholeService {
             log.warn("대표사진 base64 변환 실패 reportNo=" + reportNo + " photoGb=" + photoGb, e);
             return "";
         }
+    }
+
+    private boolean isLedgerPhotoBase64Enabled() {
+        return false;
     }
 
     private String buildS3Key(String imgPath, String imgName) {
@@ -1041,7 +1046,7 @@ public class AdminPotholeService {
         Map<String, Object> result = new HashMap<String, Object>();
 
         // 관리대장 행 데이터 조회
-        List<Map<String, Object>> rows = adminPotholeMapper.selectLedgerRows(reportNos);
+        List<Map<String, Object>> rows = adminPotholeMapper.selectLedgerRowsForReportExport(reportNos);
 
         // 포장/발생위치 체크박스용 플래그 생성
         applyLedgerFlags(rows);

@@ -8,7 +8,6 @@ import com.yido.road.sos.service.ImsReportPdfService;
 import com.yido.road.sos.service.ReportDocumentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,11 +39,13 @@ public class AdminReportExportController {
         Map<String, Object> out = new HashMap<String, Object>();
         List<Map<String, Object>> templates = new ArrayList<Map<String, Object>>();
 
-        Map<String, Object> potholeLedger = new HashMap<String, Object>();
-        potholeLedger.put("templateCode", ReportTemplateCode.POTHOLE_LEDGER.name());
-        potholeLedger.put("templateName", ReportTemplateCode.POTHOLE_LEDGER.getDisplayName());
-        potholeLedger.put("supportedFormats", new String[]{"pdf", "docx", "hwpx"});
-        templates.add(potholeLedger);
+        for (ReportTemplateCode code : ReportTemplateCode.values()) {
+            Map<String, Object> template = new HashMap<String, Object>();
+            template.put("templateCode", code.name());
+            template.put("templateName", code.getDisplayName());
+            template.put("supportedFormats", resolveSupportedFormats(code));
+            templates.add(template);
+        }
 
         out.put("success", true);
         out.put("data", templates);
@@ -68,7 +69,7 @@ public class AdminReportExportController {
         ReportExportFormat exportFormat = ReportExportFormat.from(format);
 
         if (templateCode != ReportTemplateCode.POTHOLE_LEDGER) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "현재 지원하지 않는 템플릿입니다.");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "해당 통합 출력 API는 포트홀 관리대장만 지원합니다.");
             return;
         }
 
@@ -97,6 +98,18 @@ public class AdminReportExportController {
         response.getOutputStream().write(bytes);
     }
 
+    private String[] resolveSupportedFormats(ReportTemplateCode code) {
+        if (code == ReportTemplateCode.POTHOLE_LEDGER) {
+            return new String[]{"pdf", "docx", "hwpx"};
+        }
+        if (code == ReportTemplateCode.DAILY_CHECK_LOG
+                || code == ReportTemplateCode.DAILY_CHECK_RESULT
+                || code == ReportTemplateCode.SITUATION_LOG) {
+            return new String[]{"docx", "hwpx"};
+        }
+        return new String[]{"docx"};
+    }
+
     private void setDownloadHeaders(HttpServletResponse response, String fileName, String contentType) throws Exception {
         String encodedFileName = URLEncoder.encode(fileName, "UTF-8").replace("+", "%20");
         response.setContentType(contentType);
@@ -106,4 +119,3 @@ public class AdminReportExportController {
         response.setHeader(HttpHeaders.PRAGMA, "no-cache");
     }
 }
-
