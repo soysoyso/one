@@ -76,9 +76,7 @@
 
 ## 현재 중단 지점
 
-- 2026-05-22 기준 `PDF/DOCX/HWPX` export 구조와 포트홀 관리대장 PoC 코드를 추가했다.
-- Docker 빌드는 성공했다.
-- `/admin/reports/export` 호출 시 500 오류가 발생한다.
-- 다음 재개 시 첫 작업은 `docker logs --tail 160 road-sos`로 오류 원인을 확인하는 것이다.
-- 세부 일정은 `09_schedule.md`를 기준으로 관리한다.
-- road-sos 공통 디자인 기준은 `12_design_system.md`를 기준으로 관리한다.
+- 오늘 목표는 내일 출근 후 로컬에서 각 기능과 UIUX를 바로 확인할 수 있는 상태로 만드는 것이다.
+- Docker 빌드와 Playwright 중간 QA는 통과했다.
+- 현재 확인 기준 문서는 `24_tomorrow_function_uiux_checklist.md`로 관리한다.
+- 세부 일정은 `09_schedule.md`, 공통 디자인 기준은 `12_design_system.md`를 기준으로 관리한다.
