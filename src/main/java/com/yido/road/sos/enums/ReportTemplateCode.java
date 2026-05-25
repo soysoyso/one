@@ -1,7 +1,7 @@
 package com.yido.road.sos.enums;
 
 public enum ReportTemplateCode {
-    POTHOLE_LEDGER("도로파손(포트홀) 관리대장"),
+    POTHOLE_LEDGER("포트홀 관리대장"),
     POTHOLE_SUMMARY("포트홀 집계표"),
     MAINTENANCE_LOG("유지보수 일지"),
     DAILY_CHECK_LOG("일상점검일지"),

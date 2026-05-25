@@ -36,7 +36,7 @@
                     </div>
                     <div class="col-3">
                         <label class="form-label">키워드</label>
-                        <input type="text" id="keyword" class="form-control" placeholder="점검번호, 체크리스트, 작성자">
+                        <input type="text" id="keyword" class="form-control" placeholder="점검번호, 체크리스트명, 작성자">
                     </div>
                     <div class="col-1">
                         <button type="button" class="btn btn-primary w-100" id="btnSearch">조회</button>
@@ -120,21 +120,17 @@
         $('#btnSearch').on('click', function () {
             loadDailyChecks(1);
         });
-
         $('#keyword').on('keyup', function (e) {
             if (e.key === 'Enter') {
                 loadDailyChecks(1);
             }
         });
-
         $('#btnClosePanel').on('click', function () {
             $('#sidePanel').addClass('hidden');
         });
-
         $('#btnDailyCheckDocx').on('click', function () {
             exportDailyCheck('docx');
         });
-
         $('#btnDailyCheckHwpx').on('click', function () {
             exportDailyCheck('hwpx');
         });

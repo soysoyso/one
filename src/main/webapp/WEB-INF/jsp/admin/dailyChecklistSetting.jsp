@@ -156,32 +156,16 @@
         $('#btnSearch').on('click', function () {
             loadChecklists(1);
         });
-
         $('#keyword').on('keyup', function (e) {
             if (e.key === 'Enter') {
                 loadChecklists(1);
             }
         });
-
-        $('#btnAddChecklist').on('click', function () {
-            openPanel();
-        });
-
-        $('#btnClosePanel').on('click', function () {
-            closePanel();
-        });
-
-        $('#btnAddItem').on('click', function () {
-            addItemRow({});
-        });
-
-        $('#btnSave').on('click', function () {
-            saveChecklist();
-        });
-
-        $('#btnDelete').on('click', function () {
-            deleteChecklist();
-        });
+        $('#btnAddChecklist').on('click', openPanel);
+        $('#btnClosePanel').on('click', closePanel);
+        $('#btnAddItem').on('click', function () { addItemRow({}); });
+        $('#btnSave').on('click', saveChecklist);
+        $('#btnDelete').on('click', deleteChecklist);
     });
 
     function loadChecklists(page) {

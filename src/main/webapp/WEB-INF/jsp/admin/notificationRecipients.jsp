@@ -166,21 +166,10 @@
             }
         });
 
-        $('#btnAddRecipient').on('click', function () {
-            openPanel();
-        });
-
-        $('#btnClosePanel').on('click', function () {
-            closePanel();
-        });
-
-        $('#btnSave').on('click', function () {
-            saveRecipient();
-        });
-
-        $('#btnDelete').on('click', function () {
-            deleteRecipient();
-        });
+        $('#btnAddRecipient').on('click', openPanel);
+        $('#btnClosePanel').on('click', closePanel);
+        $('#btnSave').on('click', saveRecipient);
+        $('#btnDelete').on('click', deleteRecipient);
     });
 
     function loadRecipients(page) {

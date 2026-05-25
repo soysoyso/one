@@ -63,9 +63,7 @@
             loadChecklistItems($(this).val());
         });
 
-        $('#btnSaveDailyCheck').on('click', function () {
-            saveDailyCheck();
-        });
+        $('#btnSaveDailyCheck').on('click', saveDailyCheck);
     });
 
     function loadChecklistItems(checklistId) {

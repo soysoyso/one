@@ -145,32 +145,18 @@
     $(document).ready(function () {
         loadSituations(1);
 
-        $('#btnSearch').on('click', function () {
-            loadSituations(1);
-        });
+        $('#btnSearch').on('click', function () { loadSituations(1); });
         $('#keyword').on('keyup', function (e) {
             if (e.key === 'Enter') {
                 loadSituations(1);
             }
         });
-        $('#btnNewSituation').on('click', function () {
-            openNewPanel();
-        });
-        $('#btnExportSituationDocx').on('click', function () {
-            exportSituations('docx');
-        });
-        $('#btnExportSituationHwpx').on('click', function () {
-            exportSituations('hwpx');
-        });
-        $('#btnClosePanel').on('click', function () {
-            $('#sidePanel').addClass('hidden');
-        });
-        $('#btnSaveSituation').on('click', function () {
-            saveSituation();
-        });
-        $('#btnDeleteSituation').on('click', function () {
-            deleteSituation();
-        });
+        $('#btnNewSituation').on('click', openNewPanel);
+        $('#btnExportSituationDocx').on('click', function () { exportSituations('docx'); });
+        $('#btnExportSituationHwpx').on('click', function () { exportSituations('hwpx'); });
+        $('#btnClosePanel').on('click', function () { $('#sidePanel').addClass('hidden'); });
+        $('#btnSaveSituation').on('click', saveSituation);
+        $('#btnDeleteSituation').on('click', deleteSituation);
     });
 
     function loadSituations(page) {
