@@ -2248,10 +2248,12 @@ console.log(list);
     function syncLedgerExportFormatOptions() {
         var template = ($('#ledgerExportTemplate').val() || 'POTHOLE_LEDGER').toUpperCase();
         var isLedger = template === 'POTHOLE_LEDGER';
-        $('#ledgerExportFormat option[value="pdf"]').prop('disabled', !isLedger);
-        if (!isLedger && ($('#ledgerExportFormat').val() || '').toLowerCase() === 'pdf') {
-            $('#ledgerExportFormat').val('docx');
+        var $format = $('#ledgerExportFormat');
+        var currentFormat = ($format.val() || 'pdf').toLowerCase();
+        if (!isLedger && currentFormat === 'pdf') {
+            $format.val('docx');
         }
+        $('#ledgerExportFormat option[value="pdf"]').prop('disabled', !isLedger);
     }
 
     $(document)
