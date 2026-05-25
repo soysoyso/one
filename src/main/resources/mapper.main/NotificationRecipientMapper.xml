@@ -81,6 +81,28 @@
         WHERE recipient_id = #{recipientId}
     </select>
 
+    <select id="selectActiveRecipientsForSend" resultType="NotificationRecipient">
+        SELECT
+            recipient_id,
+            notification_type,
+            recipient_nm,
+            phone_no,
+            user_id,
+            site_cd,
+            use_yn,
+            sort_ord,
+            remark
+        FROM notification_recipient
+        WHERE use_yn = 'Y'
+          AND notification_type = #{notificationType}
+          AND (
+              site_cd IS NULL
+              OR site_cd = ''
+              OR site_cd = #{siteCd}
+          )
+        ORDER BY sort_ord ASC, recipient_id ASC
+    </select>
+
     <insert id="insertNotificationRecipient" parameterType="NotificationRecipient" useGeneratedKeys="true" keyProperty="recipientId">
         INSERT INTO notification_recipient (
             notification_type,

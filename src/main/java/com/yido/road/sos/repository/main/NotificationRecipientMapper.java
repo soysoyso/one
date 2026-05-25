@@ -17,6 +17,8 @@ public interface NotificationRecipientMapper {
 
     NotificationRecipient selectNotificationRecipient(@Param("recipientId") Long recipientId);
 
+    List<NotificationRecipient> selectActiveRecipientsForSend(Map<String, Object> params);
+
     void insertNotificationRecipient(NotificationRecipient recipient);
 
     void updateNotificationRecipient(NotificationRecipient recipient);

@@ -32,6 +32,11 @@
 - 추가 범위: 접수 선택 기반 포트홀 관리대장 `PDF/DOCX/HWPX` 선택 다운로드, 통합 export API 연결, Playwright QA 보강.
 - 검증: Docker 빌드 및 중간 QA에서 확인한다.
 
+## 2026-05-25 알림톡 로컬 스텁 업데이트
+- `feature/notification-local-send-stub` 브랜치에서 알림톡 수신자 설정과 로컬 발송 흐름을 연결한다.
+- 추가 범위: 로컬 프로필 외부 SMS 호출 차단, 수신자 설정 기반 발송 후보 조회, 발송 예정 로그 출력.
+- 검증: Docker 빌드 및 중간 QA에서 확인한다.
+
 ## 기준
 
 - 기준 프레임워크: `C:\Users\YIDO\Desktop\YIDO250728\codex\ai-service-framework`

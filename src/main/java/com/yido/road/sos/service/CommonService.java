@@ -7,12 +7,15 @@ import java.util.Map;
 
 import com.yido.road.sos.enums.SmsTemplateCode;
 import com.yido.road.sos.model.CdCommon;
+import com.yido.road.sos.model.NotificationRecipient;
 import com.yido.road.sos.model.Pothole;
 import com.yido.road.sos.repository.main.AdminUserMapper;
 import com.yido.road.sos.repository.main.CommonMapper;
+import com.yido.road.sos.repository.main.NotificationRecipientMapper;
 import com.yido.road.sos.repository.main.PotholeMapper;
 import com.yido.road.sos.repository.yido.SmsSendMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +35,11 @@ public class CommonService {
     private AdminUserMapper adminUserMapper;
     @Autowired
     private PotholeMapper potholeMapper;
+    @Autowired
+    private NotificationRecipientMapper notificationRecipientMapper;
+
+    @Value("${notification.send.local-stub:false}")
+    private boolean notificationSendLocalStub;
 
     public CdCommon getCommonCode(CdCommon cdCommon) {
     	return commonMapper.getCommonCode(cdCommon);
@@ -84,6 +92,11 @@ public class CommonService {
 
         log.debug("[sendSmsToUsers] pothole:{}", pothole);
 
+        if (pothole == null) {
+            log.warn("[고속도로 운영관리 SMS] 접수 정보를 찾을 수 없습니다. reportNo={}", reportNo);
+            return;
+        }
+
         Map<String, Object> param = new HashMap<>();
         //param.put("siteCd", pothole.getSiteCd());
 
@@ -99,6 +112,11 @@ public class CommonService {
         }
 
         param.put("siteCd", smsSiteCd);
+
+        if (notificationSendLocalStub) {
+            sendLocalNotificationStub(reportNo, tpl, smsSiteCd, pothole);
+            return;
+        }
 
         if (!"ALL".equals(bizDivCd)) {
             param.put("bizDivCd", bizDivCd);
@@ -190,6 +208,42 @@ public class CommonService {
         }
 
         log.debug("[고속도로 운영관리 SMS 대상자] {}", sb.toString());
+    }
+
+    private void sendLocalNotificationStub(String reportNo, SmsTemplateCode tpl, String siteCd, Pothole pothole) {
+        String notificationType = resolveNotificationType(tpl);
+        Map<String, Object> params = new HashMap<>();
+        params.put("notificationType", notificationType);
+        params.put("siteCd", siteCd);
+
+        List<NotificationRecipient> recipients = notificationRecipientMapper.selectActiveRecipientsForSend(params);
+        if (recipients == null || recipients.isEmpty()) {
+            log.info("[로컬 알림톡 스텁] 발송 대상 없음 reportNo={} notificationType={} siteCd={}",
+                    reportNo, notificationType, siteCd);
+            return;
+        }
+
+        for (NotificationRecipient recipient : recipients) {
+            log.info("[로컬 알림톡 스텁] reportNo={} notificationType={} template={} recipient={} phone={} siteCd={} message={}",
+                    reportNo,
+                    notificationType,
+                    tpl.name(),
+                    nvl(recipient.getRecipientNm()),
+                    nvl(recipient.getPhoneNo()),
+                    nvl(recipient.getSiteCd()),
+                    buildSmsPreviewMessage(pothole, tpl));
+        }
+    }
+
+    private String resolveNotificationType(SmsTemplateCode tpl) {
+        if (tpl == SmsTemplateCode.WORK_COMPLETE) {
+            return "POTHOLE_COMPLETE";
+        }
+        return "POTHOLE_RECEIPT";
+    }
+
+    private String buildSmsPreviewMessage(Pothole pothole, SmsTemplateCode tpl) {
+        return nvl(pothole.getSiteName()) + " 작업이 " + tpl.getDesc() + " 되었습니다. 접수번호: " + nvl(pothole.getReportNo());
     }
 
     private String nvl(String str) {
