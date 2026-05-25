@@ -450,6 +450,7 @@ public class AdminPotholeService {
         String siteCd   = params.get("siteCd") != null ? params.get("siteCd").toString().trim() : "";
         String statusCd = params.get("statusCd") != null ? params.get("statusCd").toString().trim() : "";
         String reportNo = params.get("reportNo") != null ? params.get("reportNo").toString().trim() : "";
+        String keyword  = params.get("keyword") != null ? params.get("keyword").toString().trim() : "";
         String workTypeCd  = params.get("workTypeCd") != null ? params.get("workTypeCd").toString().trim() : "";
 
         // ====== 페이징 ======
@@ -475,6 +476,10 @@ public class AdminPotholeService {
 
         if (!reportNo.isEmpty()) {
             searchParams.put("reportNo", reportNo);
+        }
+
+        if (!keyword.isEmpty()) {
+            searchParams.put("keyword", keyword);
         }
 
         if (!workTypeCd.isEmpty()) {

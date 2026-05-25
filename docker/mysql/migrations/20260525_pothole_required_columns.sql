@@ -23,11 +23,33 @@ BEGIN
 END//
 DELIMITER ;
 
-CALL add_column_if_missing('pothole', 'lane_info', 'varchar(200) NULL');
-CALL add_column_if_missing('pothole', 'report_remark', 'text NULL');
-CALL add_column_if_missing('pothole', 'work_qty', 'decimal(12,2) NULL');
-CALL add_column_if_missing('pothole', 'convert_work_qty', 'decimal(12,2) NULL');
-CALL add_column_if_missing('pothole', 'account_work_qty', 'decimal(12,2) NULL');
+CALL add_column_if_missing('pothole', 'doc_no', 'varchar(50) NULL');
+CALL add_column_if_missing('pothole', 'cell_phone', 'varchar(500) NULL');
+CALL add_column_if_missing('pothole', 'detail_info', 'varchar(1000) NULL');
+CALL add_column_if_missing('pothole', 'delivery_note', 'text NULL');
+CALL add_column_if_missing('pothole', 'pavement_type_cds', 'varchar(200) NULL');
+CALL add_column_if_missing('pothole', 'occur_place_cds', 'varchar(200) NULL');
+CALL add_column_if_missing('pothole', 'sta_text', 'varchar(100) NULL');
+CALL add_column_if_missing('pothole', 'sta_ref_name', 'varchar(200) NULL');
+CALL add_column_if_missing('pothole', 'sta_meters', 'bigint NULL');
+CALL add_column_if_missing('pothole', 'sta_km_decimal', 'decimal(12,3) NULL');
+CALL add_column_if_missing('pothole', 'accuracy_m', 'decimal(12,2) NULL');
+CALL add_column_if_missing('pothole', 'captured_at', 'datetime NULL');
+CALL add_column_if_missing('pothole', 'captured_ts', 'bigint NULL');
+CALL add_column_if_missing('pothole', 'admin_site_cd', 'varchar(50) NULL');
+CALL add_column_if_missing('pothole', 'temp', 'int NULL');
+CALL add_column_if_missing('pothole', 'work_temp', 'int NULL');
+CALL add_column_if_missing('pothole', 'work_start_at', 'datetime NULL');
+CALL add_column_if_missing('pothole', 'work_end_at', 'datetime NULL');
+CALL add_column_if_missing('pothole', 'reg_datetime', 'datetime NULL');
+CALL add_column_if_missing('pothole', 'del_yn', 'varchar(1) NOT NULL DEFAULT ''N''');
+CALL add_column_if_missing('pothole', 'update_ip', 'varchar(50) NULL');
+
+CALL add_column_if_missing('pothole_history', 'action_type', 'varchar(50) NULL');
+CALL add_column_if_missing('pothole_history', 'changed_fields', 'text NULL');
+CALL add_column_if_missing('pothole_history', 'before_data', 'longtext NULL');
+CALL add_column_if_missing('pothole_history', 'after_data', 'longtext NULL');
+CALL add_column_if_missing('pothole_history', 'action_memo', 'text NULL');
 
 CALL add_column_if_missing('pothole_photo', 'img_path', 'varchar(1000) NULL');
 CALL add_column_if_missing('pothole_photo', 'img_name', 'varchar(500) NULL');

@@ -808,8 +808,8 @@
                 WHEN p.direction_cd = 'DOWN' THEN '하행'
                 ELSE ''
             END AS directionNm,
-            p.addr AS locationInfo,
-            p.process_note AS detailInfo,
+            CONCAT_WS(' / ', NULLIF(p.addr, ''), NULLIF(p.lane_info, ''), NULLIF(p.report_remark, '')) AS locationInfo,
+            CONCAT_WS(' / ', NULLIF(p.detail_info, ''), NULLIF(p.process_note, ''), NULLIF(p.report_remark, '')) AS detailInfo,
             DATE_FORMAT(p.report_date, '%Y.%m.%d') AS reportDate,
             DATE_FORMAT(p.report_date, '%m/%d') AS reportDateMmdd,
             DATE_FORMAT(p.report_date, '%Y.%m.%d') AS workDate,
@@ -818,8 +818,8 @@
             cw.cd_code_nm AS weatherNm,
             DATE_FORMAT(p.report_date, '%H:%i') AS workTime,
             cww.cd_code_nm AS workWeatherNm,
-            '' AS pavementTypeCds,
-            '' AS occurPlaceCds,
+            p.pavement_type_cds AS pavementTypeCds,
+            p.occur_place_cds AS occurPlaceCds,
             p.lane_info AS laneInfo,
             p.report_remark AS reportRemark,
             p.work_qty AS workQty,
@@ -827,7 +827,7 @@
             p.account_work_qty AS accountWorkQty,
             NULL AS widthM,
             NULL AS heightM,
-            NULL AS areaM2,
+            p.work_qty AS areaM2,
             NULL AS depthCm,
             NULL AS spanM,
             bf.img_path AS beforeImgPath,
@@ -839,25 +839,25 @@
             LEFT JOIN cd_common cw ON cw.cd_div = '007' AND cw.cd_code = p.weather_cd
             LEFT JOIN cd_common cww ON cww.cd_div = '007' AND cww.cd_code = p.work_weather_cd
             LEFT JOIN (
-                SELECT p1.report_no, p1.file_path AS img_path, p1.file_name AS img_name
+                SELECT p1.report_no, p1.img_path AS img_path, p1.img_name AS img_name
                 FROM pothole_photo p1
                 INNER JOIN (
-                    SELECT report_no, COALESCE(MIN(CASE WHEN is_main = 'Y' THEN sort_no END), MIN(sort_no)) AS pick_sort_ord
+                    SELECT report_no, COALESCE(MIN(CASE WHEN is_main = 'Y' THEN sort_ord END), MIN(sort_ord)) AS pick_sort_ord
                     FROM pothole_photo
                     WHERE photo_gb = 'BEFORE'
                     GROUP BY report_no
-                ) x ON p1.report_no = x.report_no AND p1.sort_no = x.pick_sort_ord
+                ) x ON p1.report_no = x.report_no AND p1.sort_ord = x.pick_sort_ord
                 WHERE p1.photo_gb = 'BEFORE'
             ) bf ON bf.report_no = p.report_no
             LEFT JOIN (
-                SELECT p1.report_no, p1.file_path AS img_path, p1.file_name AS img_name
+                SELECT p1.report_no, p1.img_path AS img_path, p1.img_name AS img_name
                 FROM pothole_photo p1
                 INNER JOIN (
-                    SELECT report_no, COALESCE(MIN(CASE WHEN is_main = 'Y' THEN sort_no END), MIN(sort_no)) AS pick_sort_ord
+                    SELECT report_no, COALESCE(MIN(CASE WHEN is_main = 'Y' THEN sort_ord END), MIN(sort_ord)) AS pick_sort_ord
                     FROM pothole_photo
                     WHERE photo_gb = 'AFTER'
                     GROUP BY report_no
-                ) x ON p1.report_no = x.report_no AND p1.sort_no = x.pick_sort_ord
+                ) x ON p1.report_no = x.report_no AND p1.sort_ord = x.pick_sort_ord
                 WHERE p1.photo_gb = 'AFTER'
             ) af ON af.report_no = p.report_no
         WHERE p.report_no IN

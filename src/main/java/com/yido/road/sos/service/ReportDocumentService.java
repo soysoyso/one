@@ -71,6 +71,7 @@ public class ReportDocumentService {
             lines.add(value(row.get("reportNo")) + " / "
                     + value(row.get("reportDate")) + " / "
                     + firstNotBlank(value(row.get("locationInfo")), value(row.get("region"))) + " / "
+                    + value(row.get("detailInfo")) + " / "
                     + value(row.get("areaM2")));
         }
         return buildSimpleHwpx(templateCode.getDisplayName(), lines);
@@ -235,7 +236,7 @@ public class ReportDocumentService {
     private void addTemplateRows(XWPFDocument doc, ReportTemplateCode templateCode, Map<String, Object> data) {
         List<Map<String, Object>> rows = flattenPotholeRows(data);
         addSectionTitle(doc, "접수 내역");
-        XWPFTable table = doc.createTable(Math.max(rows.size() + 1, 2), 8);
+        XWPFTable table = doc.createTable(Math.max(rows.size() + 1, 2), 9);
         setTableWidth(table);
         setHeaderRow(table.getRow(0), new String[]{"NO", "접수번호", "일자", "현장", "위치", "포장", "발생장소", "면적"});
         if (rows.isEmpty()) {
@@ -250,9 +251,10 @@ public class ReportDocumentService {
             setCellText(tr.getCell(2), value(row.get("reportDate")), false);
             setCellText(tr.getCell(3), value(row.get("siteName")), false);
             setCellText(tr.getCell(4), firstNotBlank(value(row.get("locationInfo")), value(row.get("region"))), false);
-            setCellText(tr.getCell(5), value(row.get("pavementText")), false);
-            setCellText(tr.getCell(6), value(row.get("occurPlaceText")), false);
-            setCellText(tr.getCell(7), value(row.get("areaM2")), false);
+            setCellText(tr.getCell(5), value(row.get("detailInfo")), false);
+            setCellText(tr.getCell(6), value(row.get("pavementText")), false);
+            setCellText(tr.getCell(7), value(row.get("occurPlaceText")), false);
+            setCellText(tr.getCell(8), value(row.get("areaM2")), false);
         }
     }
 
