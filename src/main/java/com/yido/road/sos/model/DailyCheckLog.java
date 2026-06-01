@@ -9,6 +9,7 @@ public class DailyCheckLog {
     private Long checkId;
     private String checkNo;
     private String checkDate;
+    private String checkTitle;
     private Long checklistId;
     private String checklistName;
     private String siteCd;

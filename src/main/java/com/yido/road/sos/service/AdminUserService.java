@@ -30,6 +30,8 @@ public class AdminUserService {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private SiteInfoService siteInfoService;
+    @Autowired
+    private NotificationRecipientService notificationRecipientService;
 
     public String encodePassword(String password) {
         return passwordEncoder.encode(password);
@@ -58,7 +60,13 @@ public class AdminUserService {
         String searchKeyword = params.get("searchKeyword") != null ? params.get("searchKeyword").toString().trim() : "";
 
         int page = Integer.parseInt(params.getOrDefault("page", "1").toString());
-        int pageSize = 10;
+        int pageSize = Integer.parseInt(params.getOrDefault("pageSize", "10").toString());
+        if (pageSize <= 0) {
+            pageSize = 10;
+        }
+        if (pageSize > 500) {
+            pageSize = 500;
+        }
         int offset = (page - 1) * pageSize;
 
         searchParams.put("offset", offset);
@@ -263,6 +271,8 @@ public class AdminUserService {
             }
         }
 
+        notificationRecipientService.syncUserDefaultRecipients(user, user.getInputStaff());
+
         return result;
     }
 
@@ -375,6 +385,8 @@ public class AdminUserService {
                 adminUserMapper.insertAdminUserSite(map);
             }
         }
+
+        notificationRecipientService.syncUserDefaultRecipients(user, updaterId);
 
         result.setCode("0000");
         result.setMessage("수정이 완료되었습니다.");

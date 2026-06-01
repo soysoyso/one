@@ -75,20 +75,20 @@ public class AdminReportExportController {
                 + "." + exportFormat.getExtension();
 
         if (exportFormat == ReportExportFormat.PDF) {
-            if (templateCode != ReportTemplateCode.POTHOLE_LEDGER) {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "PDF는 포트홀 관리대장만 지원합니다.");
-                return;
-            }
             setDownloadHeaders(response, fileName, exportFormat.getContentType());
-            imsReportPdfService.makeLedgerPdfFromJsp(ledgerData, request, response, response.getOutputStream());
+            if (templateCode == ReportTemplateCode.POTHOLE_LEDGER) {
+                imsReportPdfService.makeLedgerPdfFromJsp(ledgerData, request, response, response.getOutputStream());
+            } else {
+                byte[] bytes = reportDocumentService.buildPotholeTemplatePdf(templateCode, ledgerData);
+                response.setContentLength(bytes.length);
+                response.getOutputStream().write(bytes);
+            }
             return;
         }
 
         byte[] bytes;
         if (exportFormat == ReportExportFormat.DOCX) {
             bytes = reportDocumentService.buildPotholeTemplateDocx(templateCode, ledgerData);
-        } else if (exportFormat == ReportExportFormat.HWPX) {
-            bytes = reportDocumentService.buildPotholeTemplateHwpx(templateCode, ledgerData);
         } else {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "지원하지 않는 출력 형식입니다.");
             return;
@@ -100,15 +100,7 @@ public class AdminReportExportController {
     }
 
     private String[] resolveSupportedFormats(ReportTemplateCode code) {
-        if (code == ReportTemplateCode.POTHOLE_LEDGER) {
-            return new String[]{"pdf", "docx", "hwpx"};
-        }
-        if (code == ReportTemplateCode.DAILY_CHECK_LOG
-                || code == ReportTemplateCode.DAILY_CHECK_RESULT
-                || code == ReportTemplateCode.SITUATION_LOG) {
-            return new String[]{"docx", "hwpx"};
-        }
-        return new String[]{"docx", "hwpx"};
+        return new String[]{"pdf", "docx"};
     }
 
     private void setDownloadHeaders(HttpServletResponse response, String fileName, String contentType) throws Exception {

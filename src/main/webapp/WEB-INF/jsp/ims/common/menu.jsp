@@ -33,6 +33,12 @@
         <div class="card mb-2" onclick="location.href='/manage/daily-checks/form'">
             일상점검 작성
         </div>
+        <div class="card mb-2" onclick="location.href='/manage/daily-checks'">
+            일상점검 이력
+        </div>
+        <div class="card mb-2" onclick="location.href='/manage/situation-logs'">
+            상황일지
+        </div>
         <div class="card mb-2" onclick="location.href='/ims/auth/mypage'">
             마이페이지
         </div>

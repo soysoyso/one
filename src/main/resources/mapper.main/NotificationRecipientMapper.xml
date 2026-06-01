@@ -81,6 +81,36 @@
         WHERE recipient_id = #{recipientId}
     </select>
 
+    <select id="selectExistingNotificationRecipient" parameterType="NotificationRecipient" resultType="NotificationRecipient">
+        SELECT
+            recipient_id,
+            notification_type,
+            recipient_nm,
+            phone_no,
+            user_id,
+            site_cd,
+            use_yn,
+            sort_ord,
+            remark,
+            reg_id,
+            DATE_FORMAT(reg_dt, '%Y-%m-%d %H:%i') AS reg_dt,
+            upd_id,
+            DATE_FORMAT(upd_dt, '%Y-%m-%d %H:%i') AS upd_dt
+        FROM notification_recipient
+        WHERE notification_type = #{notificationType}
+          AND IFNULL(site_cd, '') = IFNULL(#{siteCd}, '')
+          <choose>
+              <when test="userId != null and userId != ''">
+                  AND user_id = #{userId}
+              </when>
+              <otherwise>
+                  AND phone_no = #{phoneNo}
+              </otherwise>
+          </choose>
+        ORDER BY use_yn DESC, recipient_id DESC
+        LIMIT 1
+    </select>
+
     <select id="selectActiveRecipientsForSend" resultType="NotificationRecipient">
         SELECT
             recipient_id,
@@ -102,6 +132,75 @@
           )
         ORDER BY sort_ord ASC, recipient_id ASC
     </select>
+
+    <select id="selectNotificationTemplateSetting" parameterType="string" resultType="NotificationTemplateSetting">
+        SELECT
+            notification_type,
+            template_code,
+            template_title,
+            default_dept_cds,
+            use_yn,
+            remark,
+            reg_id,
+            DATE_FORMAT(reg_dt, '%Y-%m-%d %H:%i') AS reg_dt,
+            upd_id,
+            DATE_FORMAT(upd_dt, '%Y-%m-%d %H:%i') AS upd_dt
+        FROM notification_template_setting
+        WHERE notification_type = #{notificationType}
+    </select>
+
+    <select id="selectNotificationTemplateSettingsByDept" parameterType="string" resultType="NotificationTemplateSetting">
+        SELECT
+            notification_type,
+            template_code,
+            template_title,
+            default_dept_cds,
+            use_yn,
+            remark,
+            reg_id,
+            DATE_FORMAT(reg_dt, '%Y-%m-%d %H:%i') AS reg_dt,
+            upd_id,
+            DATE_FORMAT(upd_dt, '%Y-%m-%d %H:%i') AS upd_dt
+        FROM notification_template_setting
+        WHERE use_yn = 'Y'
+          AND FIND_IN_SET(#{deptCd}, IFNULL(default_dept_cds, '')) > 0
+        ORDER BY notification_type ASC
+    </select>
+
+    <insert id="insertNotificationTemplateSetting" parameterType="NotificationTemplateSetting">
+        INSERT INTO notification_template_setting (
+            notification_type,
+            template_code,
+            template_title,
+            default_dept_cds,
+            use_yn,
+            remark,
+            reg_id,
+            reg_dt
+        ) VALUES (
+            #{notificationType},
+            #{templateCode},
+            #{templateTitle},
+            #{defaultDeptCds},
+            #{useYn},
+            #{remark},
+            #{regId},
+            NOW()
+        )
+    </insert>
+
+    <update id="updateNotificationTemplateSetting" parameterType="NotificationTemplateSetting">
+        UPDATE notification_template_setting
+        SET
+            template_code = #{templateCode},
+            template_title = #{templateTitle},
+            default_dept_cds = #{defaultDeptCds},
+            use_yn = #{useYn},
+            remark = #{remark},
+            upd_id = #{updId},
+            upd_dt = NOW()
+        WHERE notification_type = #{notificationType}
+    </update>
 
     <insert id="insertNotificationRecipient" parameterType="NotificationRecipient" useGeneratedKeys="true" keyProperty="recipientId">
         INSERT INTO notification_recipient (

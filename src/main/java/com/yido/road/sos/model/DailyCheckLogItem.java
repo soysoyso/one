@@ -11,5 +11,6 @@ public class DailyCheckLogItem {
     private String inputType;
     private String requiredYn;
     private String checkValue;
+    private String checkMemo;
     private String sortOrd;
 }

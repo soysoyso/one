@@ -154,6 +154,7 @@ public class AdminController {
     public String notificationRecipients(Model model, @AuthenticationPrincipal UserCustom loginUser) {
         model.addAttribute("notificationTypeList", commonService.codes("NOTI_TYPE"));
         model.addAttribute("siteList", adminUserService.getAvailableSiteList(loginUser));
+        model.addAttribute("deptList", commonService.codes("DEPT"));
         return "admin/notificationRecipients";
     }
 
@@ -197,6 +198,23 @@ public class AdminController {
     public ResultVO deleteNotificationRecipient(@RequestParam("recipientId") Long recipientId,
                                                 @AuthenticationPrincipal UserCustom loginUser) {
         return notificationRecipientService.deleteRecipient(recipientId, loginUser);
+    }
+
+    @PreAuthorize("hasAnyAuthority('ATH100')")
+    @GetMapping("/notification/template/{notificationType}")
+    @ResponseBody
+    public ResultVO getNotificationTemplateSetting(@PathVariable("notificationType") String notificationType) {
+        ResultVO result = new ResultVO();
+        result.setData(notificationRecipientService.getTemplateSetting(notificationType));
+        return result;
+    }
+
+    @PreAuthorize("hasAnyAuthority('ATH100')")
+    @PostMapping("/notification/template/save")
+    @ResponseBody
+    public ResultVO saveNotificationTemplateSetting(@RequestParam Map<String, Object> params,
+                                                    @AuthenticationPrincipal UserCustom loginUser) {
+        return notificationRecipientService.saveTemplateSetting(params, loginUser);
     }
 
     /**

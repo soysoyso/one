@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS admin_user (
   user_auth varchar(50),
   dept_cd varchar(50),
   biz_div_cd varchar(50),
+  last_receipt_gb_cd varchar(50),
   use_yn tinyint DEFAULT 1,
   reg_dt datetime,
   reg_id varchar(100),
@@ -63,6 +64,7 @@ CREATE TABLE IF NOT EXISTS admin_user_log (
   log_id bigint NOT NULL AUTO_INCREMENT,
   user_id varchar(100),
   user_nm varchar(100),
+  user_pwd varchar(500),
   user_mail varchar(500),
   user_tel varchar(500),
   user_auth varchar(50),
@@ -72,6 +74,8 @@ CREATE TABLE IF NOT EXISTS admin_user_log (
   input_staff varchar(100),
   input_datetime datetime,
   input_ip varchar(50),
+  reg_id varchar(100),
+  reg_dt datetime,
   PRIMARY KEY (log_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -95,6 +99,20 @@ CREATE TABLE IF NOT EXISTS notification_recipient (
   KEY idx_notification_recipient_use (use_yn)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS notification_template_setting (
+  notification_type varchar(50) NOT NULL,
+  template_code varchar(100),
+  template_title varchar(200),
+  default_dept_cds varchar(500),
+  use_yn varchar(1) DEFAULT 'Y',
+  remark varchar(1000),
+  reg_id varchar(100),
+  reg_dt datetime,
+  upd_id varchar(100),
+  upd_dt datetime,
+  PRIMARY KEY (notification_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS daily_checklist (
   checklist_id bigint NOT NULL AUTO_INCREMENT,
   checklist_name varchar(100) NOT NULL,
@@ -116,6 +134,7 @@ CREATE TABLE IF NOT EXISTS daily_checklist_item (
   checklist_id bigint NOT NULL,
   item_name varchar(200) NOT NULL,
   input_type varchar(20) DEFAULT 'CHECK',
+  option_values varchar(1000),
   required_yn varchar(1) DEFAULT 'N',
   use_yn varchar(1) DEFAULT 'Y',
   sort_ord int DEFAULT 0,
@@ -128,6 +147,7 @@ CREATE TABLE IF NOT EXISTS daily_check_log (
   check_id bigint NOT NULL AUTO_INCREMENT,
   check_no varchar(30) NOT NULL,
   check_date date NOT NULL,
+  check_title varchar(200),
   checklist_id bigint NOT NULL,
   site_cd varchar(50),
   writer_id varchar(100),
@@ -151,6 +171,7 @@ CREATE TABLE IF NOT EXISTS daily_check_log_item (
   input_type varchar(20),
   required_yn varchar(1),
   check_value text,
+  check_memo varchar(1000),
   sort_ord int DEFAULT 0,
   PRIMARY KEY (log_item_id),
   KEY idx_daily_check_log_item_parent (check_id)

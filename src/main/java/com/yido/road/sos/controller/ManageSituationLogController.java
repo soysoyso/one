@@ -1,10 +1,8 @@
-package com.yido.road.sos.admin;
+package com.yido.road.sos.controller;
 
-import com.yido.road.sos.model.SituationLog;
-import com.yido.road.sos.enums.ReportExportFormat;
 import com.yido.road.sos.security.UserCustom;
-import com.yido.road.sos.service.AdminUserService;
 import com.yido.road.sos.service.CommonService;
+import com.yido.road.sos.enums.ReportExportFormat;
 import com.yido.road.sos.service.ReportDocumentService;
 import com.yido.road.sos.service.SituationLogService;
 import com.yido.road.sos.util.ResultVO;
@@ -29,36 +27,37 @@ import java.util.Map;
 
 @Controller
 @RequiredArgsConstructor
-@RequestMapping("/admin/situation-logs")
-public class AdminSituationLogController {
+@RequestMapping("/manage/situation-logs")
+public class ManageSituationLogController {
     private final SituationLogService situationLogService;
-    private final AdminUserService adminUserService;
     private final CommonService commonService;
     private final ReportDocumentService reportDocumentService;
 
-    @PreAuthorize("hasAnyAuthority('ATH100','ATH200')")
+    @PreAuthorize("hasAuthority('ATH300')")
     @GetMapping("")
     public String list(Model model, @AuthenticationPrincipal UserCustom loginUser) {
-        String today = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
-        model.addAttribute("today", today);
-        model.addAttribute("siteList", adminUserService.getAvailableSiteList(loginUser));
+        model.addAttribute("today", new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
+        model.addAttribute("siteInfo", loginUser == null ? null : loginUser.getSiteInfo());
         model.addAttribute("shiftList", commonService.codes("SITUATION_SHIFT"));
-        return "admin/situationLog";
+        return "ims/situation-log/list";
     }
 
-    @PreAuthorize("hasAnyAuthority('ATH100','ATH200')")
+    @PreAuthorize("hasAuthority('ATH300')")
     @GetMapping("/data")
     @ResponseBody
-    public Map<String, Object> data(@RequestParam Map<String, Object> params) {
+    public Map<String, Object> data(@RequestParam Map<String, Object> params,
+                                    @AuthenticationPrincipal UserCustom loginUser) {
+        params.put("siteCd", siteCd(loginUser));
         return situationLogService.getSituationLogListData(params);
     }
 
-    @PreAuthorize("hasAnyAuthority('ATH100','ATH200')")
+    @PreAuthorize("hasAuthority('ATH300')")
     @GetMapping("/{situationId}")
     @ResponseBody
-    public ResultVO detail(@PathVariable("situationId") Long situationId) {
+    public ResultVO detail(@PathVariable("situationId") Long situationId,
+                           @AuthenticationPrincipal UserCustom loginUser) {
         ResultVO result = new ResultVO();
-        SituationLog detail = situationLogService.getSituationLog(situationId);
+        Object detail = situationLogService.getSituationLog(situationId);
         if (detail == null) {
             result.setCode("9999");
             result.setMessage("상황일지 정보를 찾을 수 없습니다.");
@@ -68,48 +67,54 @@ public class AdminSituationLogController {
         return result;
     }
 
-    @PreAuthorize("hasAnyAuthority('ATH100','ATH200')")
+    @PreAuthorize("hasAuthority('ATH300')")
     @PostMapping("/save")
     @ResponseBody
-    public ResultVO save(@RequestParam Map<String, Object> params, @AuthenticationPrincipal UserCustom loginUser) {
+    public ResultVO save(@RequestParam Map<String, Object> params,
+                         @AuthenticationPrincipal UserCustom loginUser) {
+        params.put("siteCd", siteCd(loginUser));
+        params.put("useYn", "Y");
         return situationLogService.saveSituationLog(params, loginUser);
     }
 
-    @PreAuthorize("hasAnyAuthority('ATH100','ATH200')")
+    @PreAuthorize("hasAuthority('ATH300')")
     @PostMapping("/delete")
     @ResponseBody
-    public ResultVO delete(@RequestParam("situationId") Long situationId, @AuthenticationPrincipal UserCustom loginUser) {
+    public ResultVO delete(@RequestParam("situationId") Long situationId,
+                           @AuthenticationPrincipal UserCustom loginUser) {
         return situationLogService.deleteSituationLog(situationId, loginUser);
     }
 
-    @PreAuthorize("hasAnyAuthority('ATH100','ATH200')")
+    @PreAuthorize("hasAuthority('ATH300')")
     @GetMapping("/export")
     public void export(@RequestParam Map<String, Object> params,
                        @RequestParam(value = "format", defaultValue = "docx") String format,
+                       @AuthenticationPrincipal UserCustom loginUser,
                        HttpServletResponse response) throws Exception {
+        params.put("siteCd", siteCd(loginUser));
         ReportExportFormat exportFormat = ReportExportFormat.from(format);
-        Map<String, Object> data = situationLogService.getSituationLogReportData(params);
-
-        byte[] bytes;
-        String fileName = "상황일지." + exportFormat.getExtension();
-        if (exportFormat == ReportExportFormat.DOCX) {
-            bytes = reportDocumentService.buildSituationLogDocx(data);
-        } else {
+        if (exportFormat != ReportExportFormat.DOCX) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "지원하지 않는 출력 형식입니다.");
             return;
         }
 
-        setDownloadHeaders(response, fileName, exportFormat.getContentType());
-        response.setContentLength(bytes.length);
-        response.getOutputStream().write(bytes);
-    }
-
-    private void setDownloadHeaders(HttpServletResponse response, String fileName, String contentType) throws Exception {
+        Map<String, Object> data = situationLogService.getSituationLogReportData(params);
+        byte[] bytes = reportDocumentService.buildSituationLogDocx(data);
+        String fileName = "상황일지." + exportFormat.getExtension();
         String encodedFileName = URLEncoder.encode(fileName, "UTF-8").replace("+", "%20");
-        response.setContentType(contentType);
+        response.setContentType(exportFormat.getContentType());
         response.setCharacterEncoding("UTF-8");
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedFileName);
         response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0");
         response.setHeader(HttpHeaders.PRAGMA, "no-cache");
+        response.setContentLength(bytes.length);
+        response.getOutputStream().write(bytes);
+    }
+
+    private String siteCd(UserCustom loginUser) {
+        if (loginUser == null || loginUser.getSiteInfo() == null) {
+            return "";
+        }
+        return loginUser.getSiteInfo().getSiteCd();
     }
 }

@@ -7,6 +7,7 @@
             dcl.check_id,
             dcl.check_no,
             DATE_FORMAT(dcl.check_date, '%Y-%m-%d') AS check_date,
+            dcl.check_title,
             dcl.checklist_id,
             dc.checklist_name,
             dcl.site_cd,
@@ -47,9 +48,13 @@
         <if test="siteCd != null and siteCd != ''">
             AND dcl.site_cd = #{siteCd}
         </if>
+        <if test="writerId != null and writerId != ''">
+            AND dcl.writer_id = #{writerId}
+        </if>
         <if test="keyword != null and keyword != ''">
             AND (
                 dcl.check_no LIKE CONCAT('%', #{keyword}, '%')
+                OR dcl.check_title LIKE CONCAT('%', #{keyword}, '%')
                 OR dc.checklist_name LIKE CONCAT('%', #{keyword}, '%')
                 OR au.user_nm LIKE CONCAT('%', #{keyword}, '%')
                 OR dcl.writer_id LIKE CONCAT('%', #{keyword}, '%')
@@ -62,6 +67,7 @@
             dcl.check_id,
             dcl.check_no,
             DATE_FORMAT(dcl.check_date, '%Y-%m-%d') AS check_date,
+            dcl.check_title,
             dcl.checklist_id,
             dc.checklist_name,
             dcl.site_cd,
@@ -89,6 +95,7 @@
             input_type,
             required_yn,
             check_value,
+            check_memo,
             sort_ord
         FROM daily_check_log_item
         WHERE check_id = #{checkId}
@@ -105,6 +112,7 @@
         INSERT INTO daily_check_log (
             check_no,
             check_date,
+            check_title,
             checklist_id,
             site_cd,
             writer_id,
@@ -115,6 +123,7 @@
         ) VALUES (
             #{checkNo},
             #{checkDate},
+            #{checkTitle},
             #{checklistId},
             #{siteCd},
             #{writerId},
@@ -133,6 +142,7 @@
             input_type,
             required_yn,
             check_value,
+            check_memo,
             sort_ord
         ) VALUES (
             #{checkId},
@@ -141,6 +151,7 @@
             #{inputType},
             #{requiredYn},
             #{checkValue},
+            #{checkMemo},
             #{sortOrd}
         )
     </insert>

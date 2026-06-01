@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS daily_checklist_item (
   checklist_id bigint NOT NULL,
   item_name varchar(200) NOT NULL,
   input_type varchar(20) DEFAULT 'CHECK',
+  option_values varchar(1000),
   required_yn varchar(1) DEFAULT 'N',
   use_yn varchar(1) DEFAULT 'Y',
   sort_ord int DEFAULT 0,

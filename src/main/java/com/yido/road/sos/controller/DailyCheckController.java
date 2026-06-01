@@ -53,6 +53,38 @@ public class DailyCheckController {
     }
 
     @PreAuthorize("hasAuthority('ATH300')")
+    @GetMapping("")
+    public String list(Model model, @AuthenticationPrincipal UserCustom loginUser) {
+        model.addAttribute("today", new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
+        model.addAttribute("siteInfo", loginUser == null ? null : loginUser.getSiteInfo());
+        return "ims/daily-check/list";
+    }
+
+    @PreAuthorize("hasAuthority('ATH300')")
+    @GetMapping("/data")
+    @ResponseBody
+    public Map<String, Object> data(@RequestParam Map<String, Object> params,
+                                    @AuthenticationPrincipal UserCustom loginUser) {
+        return dailyCheckService.getMyDailyCheckListData(params, loginUser);
+    }
+
+    @PreAuthorize("hasAuthority('ATH300')")
+    @GetMapping("/{checkId}")
+    @ResponseBody
+    public ResultVO detail(@PathVariable("checkId") Long checkId,
+                           @AuthenticationPrincipal UserCustom loginUser) {
+        ResultVO result = new ResultVO();
+        Object detail = dailyCheckService.getMyDailyCheckDetail(checkId, loginUser);
+        if (detail == null) {
+            result.setCode("9999");
+            result.setMessage("일상점검 이력을 찾을 수 없습니다.");
+            return result;
+        }
+        result.setData(detail);
+        return result;
+    }
+
+    @PreAuthorize("hasAuthority('ATH300')")
     @GetMapping("/checklists/{checklistId}")
     @ResponseBody
     public ResultVO checklist(@PathVariable("checklistId") Long checklistId) {

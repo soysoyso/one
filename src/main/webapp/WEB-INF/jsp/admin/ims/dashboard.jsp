@@ -139,7 +139,6 @@
             <select class="form-select" id="ledgerExportFormat" style="width: 110px;">
                 <option value="pdf">PDF</option>
                 <option value="docx">DOCX</option>
-                <option value="hwpx">HWPX</option>
             </select>
 
             <button type="button" class="btn btn-outline-success" id="btnLedgerDownload">
@@ -164,11 +163,13 @@
                 <th><input class="form-check-input" type="checkbox" id="checkDefault"></th>
                 <th>현장명</th>
                 <th>접수유형</th>
+                <th>문서번호</th>
                 <th>접수코드</th>
                 <th>상태</th>
-                <%--<th>작업내용</th>--%>
                 <th>방향</th>
                 <th>위치정보</th>
+                <th>접수/처리내용</th>
+                <th>작업량</th>
                 <th>접수일시</th>
                 <th>작업시작일시</th>
                 <th>작업종료일시</th>
@@ -177,7 +178,7 @@
             </thead>
             <tbody id="imsTableBody">
             <tr id="loadingMsgRow" style="display:none;">
-                <td colspan="11" style="text-align:center; color:gray;">조회 중입니다...</td>
+                <td colspan="14" style="text-align:center; color:gray;">조회 중입니다...</td>
             </tr>
             </tbody>
         </table>
@@ -411,6 +412,16 @@
                         var reportDate  = r.reportDate || '';
                         var workStartAt = r.workStartAt || '';
                         var workEndAt   = r.workEndAt || '';
+                        var contents = [
+                            r.deliveryNote || '',
+                            r.workContent || r.processNote || '',
+                            r.reportRemark || ''
+                        ].filter(function (v) { return v; }).map(escapeHtml).join('<br>');
+                        var qty = [
+                            r.workQty ? ('실 ' + r.workQty) : '',
+                            r.convertWorkQty ? ('환산 ' + r.convertWorkQty) : '',
+                            r.accountWorkQty ? ('정산 ' + r.accountWorkQty) : ''
+                        ].filter(function (v) { return v; }).map(escapeHtml).join('<br>');
 
                         // 완료일 때만 버튼 노출
                         var canReport = (statusCd === 'DONE' || statusCd === 'COMPLETE');
@@ -420,10 +431,13 @@
                             +   '<td><input class="form-check-input rowCheck" type="checkbox" value="' + escapeHtml(reportNo) + '"></td>'
                             +   '<td>' + escapeHtml(r.siteName || '') + '</td>'
                             +   '<td>' + escapeHtml(r.receiptGbNm || '') + '</td>'
+                            +   '<td>' + escapeHtml(r.docNo || '') + '</td>'
                             +   '<td><a href="javascript:void(0);" onclick="openImsDetail(\'' + escapeHtml(reportNo) + '\')">' + escapeHtml(reportNo) + '</a></td>'
                             +   '<td>' + renderImsStatus(statusCd) + '</td>'
                             +   '<td>' + renderDirection(directionCd) + '</td>'
                             +   '<td>' + locationInfo + '</td>'
+                            +   '<td style="text-align:left;">' + contents + '</td>'
+                            +   '<td>' + qty + '</td>'
                             +   '<td>' + escapeHtml(reportDate) + '</td>'
                             +   '<td>' + escapeHtml(workStartAt) + '</td>'
                             +   '<td>' + escapeHtml(workEndAt) + '</td>'
@@ -440,7 +454,7 @@
                             + '</tr>';
                     }
                 } else {
-                    rowHtml = '<tr><td colspan="11" style="text-align:center;">조회 결과가 없습니다.</td></tr>';
+                    rowHtml = '<tr><td colspan="14" style="text-align:center;">조회 결과가 없습니다.</td></tr>';
                 }
 
                 tbody.innerHTML = rowHtml;
@@ -464,7 +478,7 @@
 
             },
             error: function () {
-                $('#imsTableBody').html('<tr><td colspan="11" style="text-align:center; color:red;">조회 중 오류가 발생했습니다.</td></tr>');
+                $('#imsTableBody').html('<tr><td colspan="14" style="text-align:center; color:red;">조회 중 오류가 발생했습니다.</td></tr>');
                 $('#receivedCnt').text('0');
                 $('#workingCnt').text('0');
                 $('#doneCnt').text('0');
@@ -612,12 +626,30 @@ console.log(list);
     });
     // ✅ 보고서 미리보기/다운로드
     function previewReport(reportNo) {
-        var url = '/admin/ims/report/pdf/preview?reportNo=' + encodeURIComponent(reportNo);
-        window.open(url, '_blank');
+        downloadSingleTemplateReport(reportNo, 'pdf', true);
     }
 
     function downloadReport(reportNo) {
-        window.location.href = '/admin/ims/report/pdf?reportNo=' + encodeURIComponent(reportNo);
+        var format = ($('#ledgerExportFormat').val() || 'pdf').toLowerCase();
+        downloadSingleTemplateReport(reportNo, format, false);
+    }
+
+    function downloadSingleTemplateReport(reportNo, format, preview) {
+        var template = ($('#ledgerExportTemplate').val() || 'POTHOLE_LEDGER').toUpperCase();
+        var targetFormat = preview ? 'pdf' : (format || 'pdf').toLowerCase();
+        var $form = $('<form>', {
+            method: 'post',
+            action: '/admin/reports/export',
+            target: preview ? '_blank' : '_self'
+        });
+
+        $form.append($('<input>', { type: 'hidden', name: 'template', value: template }));
+        $form.append($('<input>', { type: 'hidden', name: 'format', value: targetFormat }));
+        $form.append($('<input>', { type: 'hidden', name: 'reportNos', value: reportNo }));
+
+        $('body').append($form);
+        $form.trigger('submit');
+        $form.remove();
     }
 
 
@@ -2246,14 +2278,11 @@ console.log(list);
     }
 
     function syncLedgerExportFormatOptions() {
-        var template = ($('#ledgerExportTemplate').val() || 'POTHOLE_LEDGER').toUpperCase();
-        var isLedger = template === 'POTHOLE_LEDGER';
         var $format = $('#ledgerExportFormat');
-        var currentFormat = ($format.val() || 'pdf').toLowerCase();
-        if (!isLedger && currentFormat === 'pdf') {
-            $format.val('docx');
+        $('#ledgerExportFormat option[value="pdf"]').prop('disabled', false);
+        if (!$format.val()) {
+            $format.val('pdf');
         }
-        $('#ledgerExportFormat option[value="pdf"]').prop('disabled', !isLedger);
     }
 
     $(document)

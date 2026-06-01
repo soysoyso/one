@@ -39,7 +39,12 @@ public class SituationLogService {
         }
 
         int page = parseInt(params.get("page"), 1);
-        int pageSize = 10;
+        int pageSize = parseInt(params.get("pageSize"), 10);
+        if (pageSize < 1) {
+            pageSize = 10;
+        } else if (pageSize > 100) {
+            pageSize = 100;
+        }
         int offset = (page - 1) * pageSize;
 
         searchParams.put("startDate", startDate);

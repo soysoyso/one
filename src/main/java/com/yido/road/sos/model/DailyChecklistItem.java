@@ -9,6 +9,7 @@ public class DailyChecklistItem {
     private String itemName;
     private String inputType;
     private String inputTypeNm;
+    private String optionValues;
     private String requiredYn;
     private String useYn;
     private Integer sortOrd;

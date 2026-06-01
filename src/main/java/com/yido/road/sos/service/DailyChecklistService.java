@@ -134,6 +134,7 @@ public class DailyChecklistService {
     private List<DailyChecklistItem> toItems(Map<String, Object> params, Long checklistId) {
         List<String> itemNames = getParamList(params, "itemName");
         List<String> inputTypes = getParamList(params, "inputType");
+        List<String> optionValues = getParamList(params, "optionValues");
         List<String> requiredYns = getParamList(params, "requiredYn");
         List<String> useYns = getParamList(params, "itemUseYn");
         List<String> sortOrds = getParamList(params, "itemSortOrd");
@@ -145,6 +146,7 @@ public class DailyChecklistService {
             item.setChecklistId(checklistId);
             item.setItemName(getAt(itemNames, i));
             item.setInputType(defaultValue(getAt(inputTypes, i), "CHECK"));
+            item.setOptionValues(getAt(optionValues, i));
             item.setRequiredYn(defaultValue(getAt(requiredYns, i), "N"));
             item.setUseYn(defaultValue(getAt(useYns, i), "Y"));
             item.setSortOrd(parseInt(getAt(sortOrds, i), i + 1));

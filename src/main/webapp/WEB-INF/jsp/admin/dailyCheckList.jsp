@@ -17,15 +17,15 @@
 
             <div class="search-zone">
                 <div class="row g-2 align-items-end">
-                    <div class="col-2">
+                    <div class="col-12 col-md-2">
                         <label class="form-label">시작일</label>
                         <input type="date" id="startDate" class="form-control" value="${today}">
                     </div>
-                    <div class="col-2">
+                    <div class="col-12 col-md-2">
                         <label class="form-label">종료일</label>
                         <input type="date" id="endDate" class="form-control" value="${today}">
                     </div>
-                    <div class="col-3">
+                    <div class="col-12 col-md-3">
                         <label class="form-label">현장</label>
                         <select id="siteCd" class="form-select">
                             <option value="">전체</option>
@@ -34,11 +34,11 @@
                             </c:forEach>
                         </select>
                     </div>
-                    <div class="col-3">
+                    <div class="col-12 col-md-3">
                         <label class="form-label">키워드</label>
                         <input type="text" id="keyword" class="form-control" placeholder="점검번호, 체크리스트명, 작성자">
                     </div>
-                    <div class="col-1">
+                    <div class="col-12 col-md-1">
                         <button type="button" class="btn btn-primary w-100" id="btnSearch">조회</button>
                     </div>
                 </div>
@@ -73,8 +73,7 @@
                     <h4><b>일상점검 상세</b></h4>
                     <div>
                         <button type="button" class="btn btn-success" id="btnDailyCheckDocx">DOCX 출력</button>
-                        <button type="button" class="btn btn-outline-success" id="btnDailyCheckHwpx">HWPX 출력</button>
-                        <button type="button" class="btn btn-secondary" id="btnClosePanel">창닫기</button>
+                        <button type="button" class="btn btn-secondary" id="btnClosePanel">닫기</button>
                     </div>
                 </div>
                 <div class="offcanvas-body pb-5">
@@ -111,8 +110,8 @@
 <%@include file="./common/script.jsp"%>
 
 <script>
-    let currentPage = 1;
-    let currentCheckId = null;
+    var currentPage = 1;
+    var currentCheckId = null;
 
     $(document).ready(function () {
         loadDailyChecks(1);
@@ -125,14 +124,9 @@
                 loadDailyChecks(1);
             }
         });
-        $('#btnClosePanel').on('click', function () {
-            $('#sidePanel').addClass('hidden');
-        });
+        $('#btnClosePanel').on('click', closePanel);
         $('#btnDailyCheckDocx').on('click', function () {
             exportDailyCheck('docx');
-        });
-        $('#btnDailyCheckHwpx').on('click', function () {
-            exportDailyCheck('hwpx');
         });
     });
 
@@ -143,6 +137,7 @@
         $.ajax({
             url: '/admin/daily-checks/data',
             type: 'GET',
+            dataType: 'json',
             data: {
                 page: page,
                 startDate: $('#startDate').val(),
@@ -165,7 +160,7 @@
     }
 
     function renderDailyCheckRows(list) {
-        const $body = $('#dailyCheckTableBody');
+        var $body = $('#dailyCheckTableBody');
         $body.find('tr:not(#loadingMsgRow)').remove();
 
         if (!list.length) {
@@ -189,12 +184,12 @@
     }
 
     function renderPagination(pageInfo) {
-        const totalPages = pageInfo.totalPages || 1;
-        const current = pageInfo.currentPage || 1;
-        let html = '';
+        var totalPages = pageInfo.totalPages || 1;
+        var current = pageInfo.currentPage || 1;
+        var html = '';
 
-        for (let i = 1; i <= totalPages; i++) {
-            const active = i === current ? 'btn-secondary' : 'btn-outline-secondary';
+        for (var i = 1; i <= totalPages; i++) {
+            var active = i === current ? 'btn-secondary' : 'btn-outline-secondary';
             html += '<button type="button" class="btn ' + active + ' btn-sm mx-1" onclick="loadDailyChecks(' + i + ')">' + i + '</button>';
         }
         $('#paginationZone').html(html);
@@ -205,6 +200,7 @@
         $.ajax({
             url: '/admin/daily-checks/' + checkId,
             type: 'GET',
+            dataType: 'json',
             success: function (res) {
                 if (res.code !== '0000') {
                     showMsg('warning', '확인 필요', res.message || '일상점검 정보를 찾을 수 없습니다.');
@@ -212,6 +208,7 @@
                 }
                 renderDetail(res.data || {});
                 $('#sidePanel').removeClass('hidden');
+                $('#layout').addClass('panel-open');
             },
             error: function () {
                 showMsg('error', '오류', '일상점검 상세 조회 중 오류가 발생했습니다.');
@@ -229,7 +226,7 @@
             '<tr><th>비고</th><td>' + escapeHtml(data.remark || '') + '</td></tr>'
         );
 
-        const items = data.items || [];
+        var items = data.items || [];
         $('#detailItemBody').empty();
         if (!items.length) {
             $('#detailItemBody').append('<tr><td colspan="3" style="text-align:center; color:gray;">점검 항목이 없습니다.</td></tr>');
@@ -249,16 +246,21 @@
         renderPhotos(data.photos || []);
     }
 
+    function closePanel() {
+        $('#sidePanel').addClass('hidden');
+        $('#layout').removeClass('panel-open');
+    }
+
     function renderPhotos(photos) {
-        const $body = $('#detailPhotoBody');
+        var $body = $('#detailPhotoBody');
         $body.empty();
         if (!photos.length) {
             $body.html('<p class="text-muted">등록된 사진이 없습니다.</p>');
             return;
         }
         photos.forEach(function (photo) {
-            const label = photo.photoGb === 'AFTER' ? '점검 후' : '점검 전';
-            const url = '/admin/daily-checks/photos/' + photo.photoId;
+            var label = photo.photoGb === 'AFTER' ? '점검 후' : '점검 전';
+            var url = '/admin/daily-checks/photos/' + photo.photoId;
             $body.append(
                 '<div class="col-6 col-md-3">' +
                 '<div class="border rounded p-2">' +
@@ -279,7 +281,7 @@
     }
 
     function formatValue(item) {
-        const value = item.checkValue || '';
+        var value = item.checkValue || '';
         if (item.inputType === 'CHECK') {
             if (value === 'Y') return '양호';
             if (value === 'N') return '조치필요';

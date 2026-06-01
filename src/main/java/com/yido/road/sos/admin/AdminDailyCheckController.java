@@ -108,8 +108,6 @@ public class AdminDailyCheckController {
         String fileName = "일상점검일지." + exportFormat.getExtension();
         if (exportFormat == ReportExportFormat.DOCX) {
             bytes = reportDocumentService.buildDailyCheckDocx(data);
-        } else if (exportFormat == ReportExportFormat.HWPX) {
-            bytes = reportDocumentService.buildDailyCheckHwpx(data);
         } else {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "지원하지 않는 출력 형식입니다.");
             return;

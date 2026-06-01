@@ -32,6 +32,8 @@
         SELECT
         A.USER_ID,
         A.USER_NM,
+        CONVERT(AES_DECRYPT(UNHEX(A.USER_TEL), 'RSOS') USING utf8) AS USER_TEL,
+        CONVERT(AES_DECRYPT(UNHEX(A.USER_MAIL), 'RSOS') USING utf8) AS USER_MAIL,
         A.USER_PWD,
         A.USER_AUTH,
         A.DEPT_CD,
@@ -96,6 +98,9 @@
         <!-- ✅ 권한(콤마 문자열 USER_AUTH 안에 포함 여부) -->
         <if test="searchRole != null and searchRole != ''">
             AND FIND_IN_SET(#{searchRole}, A.USER_AUTH)
+        </if>
+        <if test="searchDeptCd != null and searchDeptCd != ''">
+            AND A.DEPT_CD = #{searchDeptCd}
         </if>
 
         <!-- ✅ 관리대상(특정 고속도로 소속 여부) -->

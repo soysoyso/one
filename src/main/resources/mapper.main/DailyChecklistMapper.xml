@@ -87,6 +87,7 @@
             dci.item_name,
             dci.input_type,
             cc.cd_code_nm AS input_type_nm,
+            dci.option_values,
             dci.required_yn,
             dci.use_yn,
             dci.sort_ord
@@ -174,6 +175,7 @@
             checklist_id,
             item_name,
             input_type,
+            option_values,
             required_yn,
             use_yn,
             sort_ord
@@ -181,6 +183,7 @@
             #{checklistId},
             #{itemName},
             #{inputType},
+            #{optionValues},
             #{requiredYn},
             #{useYn},
             #{sortOrd}

@@ -51,6 +51,60 @@ public class DailyCheckService {
         return checklist;
     }
 
+    public Map<String, Object> getMyDailyCheckListData(Map<String, Object> params, UserCustom loginUser) {
+        Map<String, Object> searchParams = new HashMap<>();
+        String startDate = Utils.getParam(params, "startDate");
+        String endDate = Utils.getParam(params, "endDate");
+        String keyword = Utils.getParam(params, "keyword");
+
+        if (startDate.isEmpty() && endDate.isEmpty()) {
+            String today = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+            startDate = today;
+            endDate = today;
+        }
+
+        int page = parseInt(params.get("page"), 1);
+        int pageSize = 10;
+        int offset = (page - 1) * pageSize;
+
+        searchParams.put("startDate", startDate);
+        searchParams.put("endDate", endDate);
+        searchParams.put("siteCd", getSiteCd(loginUser));
+        searchParams.put("writerId", loginUser == null ? "" : loginUser.getUserId());
+        searchParams.put("keyword", keyword);
+        searchParams.put("offset", offset);
+        searchParams.put("pageSize", pageSize);
+
+        List<DailyCheckLog> list = dailyCheckLogMapper.selectDailyCheckLogList(searchParams);
+        int totalCount = dailyCheckLogMapper.selectDailyCheckLogCount(searchParams);
+
+        Map<String, Object> pageInfo = new HashMap<>();
+        pageInfo.put("currentPage", page);
+        pageInfo.put("pageSize", pageSize);
+        pageInfo.put("totalPages", (int) Math.ceil(totalCount / (double) pageSize));
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", list);
+        result.put("pageInfo", pageInfo);
+        result.put("totalCount", totalCount);
+        return result;
+    }
+
+    public DailyCheckLog getMyDailyCheckDetail(Long checkId, UserCustom loginUser) {
+        DailyCheckLog detail = dailyCheckLogMapper.selectDailyCheckLog(checkId);
+        if (detail == null) {
+            return null;
+        }
+        String userId = loginUser == null ? "" : loginUser.getUserId();
+        String siteCd = getSiteCd(loginUser);
+        if (!userId.equals(detail.getWriterId()) || (!siteCd.isEmpty() && !siteCd.equals(detail.getSiteCd()))) {
+            return null;
+        }
+        detail.setItems(dailyCheckLogMapper.selectDailyCheckLogItemList(checkId));
+        detail.setPhotos(dailyCheckPhotoMapper.selectDailyCheckPhotos(checkId));
+        return detail;
+    }
+
     @Transactional
     public ResultVO saveDailyCheck(Map<String, Object> params, UserCustom loginUser) {
         ResultVO result = new ResultVO();
@@ -74,8 +128,16 @@ public class DailyCheckService {
             return result;
         }
 
+        String statusCd = Utils.getParam(params, "statusCd");
+        if (isBlank(statusCd)) {
+            statusCd = "SAVED";
+        }
+        if (!"DONE".equals(statusCd)) {
+            statusCd = "SAVED";
+        }
+
         List<DailyCheckLogItem> items = toLogItems(params, checklist);
-        String validationMessage = validateRequiredItems(items);
+        String validationMessage = "DONE".equals(statusCd) ? validateRequiredItems(items) : "";
         if (!isBlank(validationMessage)) {
             result.setCode("9999");
             result.setMessage(validationMessage);
@@ -90,10 +152,11 @@ public class DailyCheckService {
         DailyCheckLog log = new DailyCheckLog();
         log.setCheckNo(dailyCheckLogMapper.selectNextDailyCheckNo(ymd));
         log.setCheckDate(checkDate);
+        log.setCheckTitle(Utils.getParam(params, "checkTitle"));
         log.setChecklistId(checklistId);
         log.setSiteCd(getSiteCd(loginUser));
         log.setWriterId(loginUser == null ? "" : loginUser.getUserId());
-        log.setStatusCd("SAVED");
+        log.setStatusCd(statusCd);
         log.setWeatherCd(Utils.getParam(params, "weatherCd"));
         log.setRemark(Utils.getParam(params, "remark"));
         dailyCheckLogMapper.insertDailyCheckLog(log);
@@ -123,9 +186,13 @@ public class DailyCheckService {
 
     private List<DailyCheckLogItem> toLogItems(Map<String, Object> params, DailyChecklist checklist) {
         Map<String, String> valueMap = new HashMap<>();
+        Map<String, String> memoMap = new HashMap<>();
         for (Map.Entry<String, Object> entry : params.entrySet()) {
             if (entry.getKey() != null && entry.getKey().startsWith("itemValue_")) {
                 valueMap.put(entry.getKey().substring("itemValue_".length()), entry.getValue() == null ? "" : entry.getValue().toString().trim());
+            }
+            if (entry.getKey() != null && entry.getKey().startsWith("itemMemo_")) {
+                memoMap.put(entry.getKey().substring("itemMemo_".length()), entry.getValue() == null ? "" : entry.getValue().toString().trim());
             }
         }
 
@@ -142,6 +209,7 @@ public class DailyCheckService {
             item.setRequiredYn(source.getRequiredYn());
             item.setSortOrd(String.valueOf(source.getSortOrd() == null ? 0 : source.getSortOrd()));
             item.setCheckValue(valueMap.getOrDefault(String.valueOf(source.getItemId()), ""));
+            item.setCheckMemo(memoMap.getOrDefault(String.valueOf(source.getItemId()), ""));
             result.add(item);
         }
         return result;
@@ -222,6 +290,17 @@ public class DailyCheckService {
             return Long.parseLong(value.toString().trim());
         } catch (NumberFormatException e) {
             return null;
+        }
+    }
+
+    private int parseInt(Object value, int defaultValue) {
+        if (value == null || value.toString().trim().isEmpty()) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(value.toString().trim());
+        } catch (NumberFormatException e) {
+            return defaultValue;
         }
     }
 }
