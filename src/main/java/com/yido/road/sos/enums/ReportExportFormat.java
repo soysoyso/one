@@ -36,4 +36,3 @@ public enum ReportExportFormat {
         throw new IllegalArgumentException("지원하지 않는 보고서 출력 형식입니다: " + value);
     }
 }
-

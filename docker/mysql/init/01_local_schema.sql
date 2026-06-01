@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS admin_user (
   user_auth varchar(50),
   dept_cd varchar(50),
   biz_div_cd varchar(50),
+  last_receipt_gb_cd varchar(50),
   use_yn tinyint DEFAULT 1,
   reg_dt datetime,
   reg_id varchar(100),
@@ -63,6 +64,7 @@ CREATE TABLE IF NOT EXISTS admin_user_log (
   log_id bigint NOT NULL AUTO_INCREMENT,
   user_id varchar(100),
   user_nm varchar(100),
+  user_pwd varchar(500),
   user_mail varchar(500),
   user_tel varchar(500),
   user_auth varchar(50),
@@ -72,7 +74,139 @@ CREATE TABLE IF NOT EXISTS admin_user_log (
   input_staff varchar(100),
   input_datetime datetime,
   input_ip varchar(50),
+  reg_id varchar(100),
+  reg_dt datetime,
   PRIMARY KEY (log_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS notification_recipient (
+  recipient_id bigint NOT NULL AUTO_INCREMENT,
+  notification_type varchar(50) NOT NULL,
+  recipient_nm varchar(100) NOT NULL,
+  phone_no varchar(50) NOT NULL,
+  user_id varchar(100),
+  site_cd varchar(50),
+  use_yn varchar(1) DEFAULT 'Y',
+  sort_ord int DEFAULT 0,
+  remark varchar(1000),
+  reg_id varchar(100),
+  reg_dt datetime,
+  upd_id varchar(100),
+  upd_dt datetime,
+  PRIMARY KEY (recipient_id),
+  KEY idx_notification_recipient_type (notification_type),
+  KEY idx_notification_recipient_site (site_cd),
+  KEY idx_notification_recipient_use (use_yn)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS notification_template_setting (
+  notification_type varchar(50) NOT NULL,
+  template_code varchar(100),
+  template_title varchar(200),
+  default_dept_cds varchar(500),
+  use_yn varchar(1) DEFAULT 'Y',
+  remark varchar(1000),
+  reg_id varchar(100),
+  reg_dt datetime,
+  upd_id varchar(100),
+  upd_dt datetime,
+  PRIMARY KEY (notification_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS daily_checklist (
+  checklist_id bigint NOT NULL AUTO_INCREMENT,
+  checklist_name varchar(100) NOT NULL,
+  site_cd varchar(50),
+  common_yn varchar(1) DEFAULT 'Y',
+  use_yn varchar(1) DEFAULT 'Y',
+  sort_ord int DEFAULT 0,
+  reg_id varchar(100),
+  reg_dt datetime,
+  upd_id varchar(100),
+  upd_dt datetime,
+  PRIMARY KEY (checklist_id),
+  KEY idx_daily_checklist_site (site_cd),
+  KEY idx_daily_checklist_use (use_yn)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS daily_checklist_item (
+  item_id bigint NOT NULL AUTO_INCREMENT,
+  checklist_id bigint NOT NULL,
+  item_name varchar(200) NOT NULL,
+  input_type varchar(20) DEFAULT 'CHECK',
+  option_values varchar(1000),
+  required_yn varchar(1) DEFAULT 'N',
+  use_yn varchar(1) DEFAULT 'Y',
+  sort_ord int DEFAULT 0,
+  PRIMARY KEY (item_id),
+  KEY idx_daily_checklist_item_parent (checklist_id),
+  KEY idx_daily_checklist_item_use (use_yn)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS daily_check_log (
+  check_id bigint NOT NULL AUTO_INCREMENT,
+  check_no varchar(30) NOT NULL,
+  check_date date NOT NULL,
+  check_title varchar(200),
+  checklist_id bigint NOT NULL,
+  site_cd varchar(50),
+  writer_id varchar(100),
+  status_cd varchar(50) DEFAULT 'SAVED',
+  weather_cd varchar(50),
+  remark text,
+  reg_dt datetime,
+  upd_dt datetime,
+  PRIMARY KEY (check_id),
+  UNIQUE KEY uk_daily_check_log_no (check_no),
+  KEY idx_daily_check_log_date (check_date),
+  KEY idx_daily_check_log_site (site_cd),
+  KEY idx_daily_check_log_writer (writer_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS daily_check_log_item (
+  log_item_id bigint NOT NULL AUTO_INCREMENT,
+  check_id bigint NOT NULL,
+  item_id bigint,
+  item_name varchar(200),
+  input_type varchar(20),
+  required_yn varchar(1),
+  check_value text,
+  check_memo varchar(1000),
+  sort_ord int DEFAULT 0,
+  PRIMARY KEY (log_item_id),
+  KEY idx_daily_check_log_item_parent (check_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS daily_check_photo (
+  photo_id bigint NOT NULL AUTO_INCREMENT,
+  check_id bigint NOT NULL,
+  photo_gb varchar(20) NOT NULL,
+  img_path varchar(1000),
+  img_name varchar(500),
+  sort_ord int DEFAULT 0,
+  reg_dt datetime,
+  PRIMARY KEY (photo_id),
+  KEY idx_daily_check_photo_parent (check_id),
+  KEY idx_daily_check_photo_gb (photo_gb)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS situation_log (
+  situation_id bigint NOT NULL AUTO_INCREMENT,
+  log_date date NOT NULL,
+  shift_cd varchar(20) NOT NULL,
+  event_time time NOT NULL,
+  title varchar(200),
+  content text NOT NULL,
+  site_cd varchar(50),
+  use_yn varchar(1) DEFAULT 'Y',
+  reg_id varchar(100),
+  reg_dt datetime DEFAULT CURRENT_TIMESTAMP,
+  upd_id varchar(100),
+  upd_dt datetime,
+  PRIMARY KEY (situation_id),
+  KEY idx_situation_log_date (log_date),
+  KEY idx_situation_log_site (site_cd),
+  KEY idx_situation_log_use (use_yn)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS incident (
@@ -320,6 +454,25 @@ INSERT INTO cd_common (cd_div, cd_div_nm, cd_code, cd_code_nm, cd_sort, use_yn) 
 ('ROAD_DIR', '방향', 'DOWN', '하행', 2, 'Y')
 ON DUPLICATE KEY UPDATE cd_code_nm = VALUES(cd_code_nm), use_yn = VALUES(use_yn);
 
+INSERT INTO cd_common (cd_div, cd_div_nm, cd_code, cd_code_nm, cd_sort, use_yn) VALUES
+('NOTI_TYPE', '알림톡 유형', 'POTHOLE_RECEIPT', '포트홀 접수', 1, 'Y'),
+('NOTI_TYPE', '알림톡 유형', 'POTHOLE_COMPLETE', '포트홀 처리완료', 2, 'Y'),
+('NOTI_TYPE', '알림톡 유형', 'DAILY_CHECK', '일상점검', 3, 'Y'),
+('NOTI_TYPE', '알림톡 유형', 'SITUATION_LOG', '상황일지', 4, 'Y')
+ON DUPLICATE KEY UPDATE cd_code_nm = VALUES(cd_code_nm), cd_sort = VALUES(cd_sort), use_yn = VALUES(use_yn);
+
+INSERT INTO cd_common (cd_div, cd_div_nm, cd_code, cd_code_nm, cd_sort, use_yn) VALUES
+('CHECK_INPUT_TYPE', '점검 입력형식', 'CHECK', '체크', 1, 'Y'),
+('CHECK_INPUT_TYPE', '점검 입력형식', 'TEXT', '텍스트', 2, 'Y'),
+('CHECK_INPUT_TYPE', '점검 입력형식', 'NUMBER', '숫자', 3, 'Y'),
+('CHECK_INPUT_TYPE', '점검 입력형식', 'SELECT', '선택', 4, 'Y')
+ON DUPLICATE KEY UPDATE cd_code_nm = VALUES(cd_code_nm), cd_sort = VALUES(cd_sort), use_yn = VALUES(use_yn);
+
+INSERT INTO cd_common (cd_div, cd_div_nm, cd_code, cd_code_nm, cd_sort, use_yn) VALUES
+('SITUATION_SHIFT', '상황일지 주야간', 'DAY', '주간', 1, 'Y'),
+('SITUATION_SHIFT', '상황일지 주야간', 'NIGHT', '야간', 2, 'Y')
+ON DUPLICATE KEY UPDATE cd_code_nm = VALUES(cd_code_nm), cd_sort = VALUES(cd_sort), use_yn = VALUES(use_yn);
+
 INSERT INTO site_info (site_cd, parent_site_cd, site_name, call_center_no, del_yn) VALUES
 ('LOCAL', NULL, '로컬 테스트 현장', '02-0000-0000', 'N'),
 ('LOCAL-01', 'LOCAL', '로컬 테스트 구간', '02-0000-0000', 'N')
@@ -339,6 +492,21 @@ ON DUPLICATE KEY UPDATE user_pwd = VALUES(user_pwd), user_auth = VALUES(user_aut
 INSERT INTO admin_user_site (user_id, site_cd) VALUES
 ('admin', 'LOCAL'),
 ('admin', 'LOCAL-01')
+ON DUPLICATE KEY UPDATE site_cd = VALUES(site_cd);
+
+INSERT INTO admin_user (
+  user_id, user_nm, user_pwd, user_mail, user_tel, user_auth, dept_cd, biz_div_cd,
+  use_yn, input_staff, input_datetime, input_ip
+) VALUES (
+  'field', '로컬 현장사용자', '{noop}field123',
+  HEX(AES_ENCRYPT('local-field@example.com', 'RSOS')),
+  HEX(AES_ENCRYPT('010-1111-2222', 'RSOS')),
+  'ATH300', 'DEV', 'APPLY', 1, 'system', NOW(), '127.0.0.1'
+)
+ON DUPLICATE KEY UPDATE user_pwd = VALUES(user_pwd), user_auth = VALUES(user_auth), biz_div_cd = VALUES(biz_div_cd), use_yn = 1;
+
+INSERT INTO admin_user_site (user_id, site_cd) VALUES
+('field', 'LOCAL')
 ON DUPLICATE KEY UPDATE site_cd = VALUES(site_cd);
 
 INSERT INTO incident (

@@ -450,6 +450,7 @@ public class AdminPotholeService {
         String siteCd   = params.get("siteCd") != null ? params.get("siteCd").toString().trim() : "";
         String statusCd = params.get("statusCd") != null ? params.get("statusCd").toString().trim() : "";
         String reportNo = params.get("reportNo") != null ? params.get("reportNo").toString().trim() : "";
+        String keyword  = params.get("keyword") != null ? params.get("keyword").toString().trim() : "";
         String workTypeCd  = params.get("workTypeCd") != null ? params.get("workTypeCd").toString().trim() : "";
 
         // ====== 페이징 ======
@@ -475,6 +476,10 @@ public class AdminPotholeService {
 
         if (!reportNo.isEmpty()) {
             searchParams.put("reportNo", reportNo);
+        }
+
+        if (!keyword.isEmpty()) {
+            searchParams.put("keyword", keyword);
         }
 
         if (!workTypeCd.isEmpty()) {
@@ -703,6 +708,7 @@ public class AdminPotholeService {
     private String getMainPhotoBase64(String reportNo, String photoGb) {
 
         try {
+            if (!isLedgerPhotoBase64Enabled()) return "";
             PotholeImage main = findMainPhoto(reportNo, photoGb);
             if (main == null) return "";
 
@@ -721,6 +727,10 @@ public class AdminPotholeService {
             log.warn("대표사진 base64 변환 실패 reportNo=" + reportNo + " photoGb=" + photoGb, e);
             return "";
         }
+    }
+
+    private boolean isLedgerPhotoBase64Enabled() {
+        return false;
     }
 
     private String buildS3Key(String imgPath, String imgName) {
@@ -1041,7 +1051,7 @@ public class AdminPotholeService {
         Map<String, Object> result = new HashMap<String, Object>();
 
         // 관리대장 행 데이터 조회
-        List<Map<String, Object>> rows = adminPotholeMapper.selectLedgerRows(reportNos);
+        List<Map<String, Object>> rows = adminPotholeMapper.selectLedgerRowsForReportExport(reportNos);
 
         // 포장/발생위치 체크박스용 플래그 생성
         applyLedgerFlags(rows);

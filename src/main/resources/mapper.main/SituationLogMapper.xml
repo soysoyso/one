@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yido.road.sos.repository.main.SituationLogMapper">
+    <select id="selectSituationLogList" resultType="SituationLog">
+        SELECT
+            sl.situation_id,
+            DATE_FORMAT(sl.log_date, '%Y-%m-%d') AS log_date,
+            sl.shift_cd,
+            cc.cd_code_nm AS shift_nm,
+            DATE_FORMAT(sl.event_time, '%H:%i') AS event_time,
+            sl.title,
+            sl.content,
+            sl.site_cd,
+            si.site_name,
+            sl.use_yn,
+            sl.reg_id,
+            au.user_nm AS reg_nm,
+            DATE_FORMAT(sl.reg_dt, '%Y-%m-%d %H:%i') AS reg_dt,
+            sl.upd_id,
+            DATE_FORMAT(sl.upd_dt, '%Y-%m-%d %H:%i') AS upd_dt
+        FROM situation_log sl
+            LEFT JOIN cd_common cc ON cc.cd_div = 'SITUATION_SHIFT' AND cc.cd_code = sl.shift_cd AND cc.use_yn = 'Y'
+            LEFT JOIN site_info si ON si.site_cd = sl.site_cd AND si.del_yn = 'N'
+            LEFT JOIN admin_user au ON au.user_id = sl.reg_id AND au.use_yn = 1
+        WHERE 1 = 1
+        <include refid="SituationLogConditions"/>
+        ORDER BY sl.log_date DESC, sl.shift_cd ASC, sl.event_time ASC, sl.situation_id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectSituationLogCount" resultType="int">
+        SELECT COUNT(*)
+        FROM situation_log sl
+            LEFT JOIN cd_common cc ON cc.cd_div = 'SITUATION_SHIFT' AND cc.cd_code = sl.shift_cd AND cc.use_yn = 'Y'
+            LEFT JOIN site_info si ON si.site_cd = sl.site_cd AND si.del_yn = 'N'
+            LEFT JOIN admin_user au ON au.user_id = sl.reg_id AND au.use_yn = 1
+        WHERE 1 = 1
+        <include refid="SituationLogConditions"/>
+    </select>
+
+    <sql id="SituationLogConditions">
+        <if test="startDate != null and startDate != ''">
+            AND sl.log_date <![CDATA[>=]]> #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND sl.log_date <![CDATA[<=]]> #{endDate}
+        </if>
+        <if test="shiftCd != null and shiftCd != ''">
+            AND sl.shift_cd = #{shiftCd}
+        </if>
+        <if test="siteCd != null and siteCd != ''">
+            AND sl.site_cd = #{siteCd}
+        </if>
+        <if test="useYn != null and useYn != ''">
+            AND sl.use_yn = #{useYn}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                sl.title LIKE CONCAT('%', #{keyword}, '%')
+                OR sl.content LIKE CONCAT('%', #{keyword}, '%')
+                OR au.user_nm LIKE CONCAT('%', #{keyword}, '%')
+                OR sl.reg_id LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+    </sql>
+
+    <select id="selectSituationLog" resultType="SituationLog">
+        SELECT
+            sl.situation_id,
+            DATE_FORMAT(sl.log_date, '%Y-%m-%d') AS log_date,
+            sl.shift_cd,
+            cc.cd_code_nm AS shift_nm,
+            DATE_FORMAT(sl.event_time, '%H:%i') AS event_time,
+            sl.title,
+            sl.content,
+            sl.site_cd,
+            si.site_name,
+            sl.use_yn,
+            sl.reg_id,
+            au.user_nm AS reg_nm,
+            DATE_FORMAT(sl.reg_dt, '%Y-%m-%d %H:%i') AS reg_dt,
+            sl.upd_id,
+            DATE_FORMAT(sl.upd_dt, '%Y-%m-%d %H:%i') AS upd_dt
+        FROM situation_log sl
+            LEFT JOIN cd_common cc ON cc.cd_div = 'SITUATION_SHIFT' AND cc.cd_code = sl.shift_cd AND cc.use_yn = 'Y'
+            LEFT JOIN site_info si ON si.site_cd = sl.site_cd AND si.del_yn = 'N'
+            LEFT JOIN admin_user au ON au.user_id = sl.reg_id AND au.use_yn = 1
+        WHERE sl.situation_id = #{situationId}
+    </select>
+
+    <insert id="insertSituationLog" parameterType="SituationLog" useGeneratedKeys="true" keyProperty="situationId">
+        INSERT INTO situation_log (
+            log_date, shift_cd, event_time, title, content, site_cd, use_yn, reg_id, reg_dt
+        ) VALUES (
+            #{logDate}, #{shiftCd}, #{eventTime}, #{title}, #{content}, #{siteCd}, #{useYn}, #{regId}, NOW()
+        )
+    </insert>
+
+    <update id="updateSituationLog" parameterType="SituationLog">
+        UPDATE situation_log
+        SET
+            log_date = #{logDate},
+            shift_cd = #{shiftCd},
+            event_time = #{eventTime},
+            title = #{title},
+            content = #{content},
+            site_cd = #{siteCd},
+            use_yn = #{useYn},
+            upd_id = #{updId},
+            upd_dt = NOW()
+        WHERE situation_id = #{situationId}
+    </update>
+
+    <update id="deleteSituationLog" parameterType="SituationLog">
+        UPDATE situation_log
+        SET use_yn = 'N', upd_id = #{updId}, upd_dt = NOW()
+        WHERE situation_id = #{situationId}
+    </update>
+</mapper>

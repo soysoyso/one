@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "qa:road-sos": "node qa/road_sos_mid_qa.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.60.0"
+  }
+}
